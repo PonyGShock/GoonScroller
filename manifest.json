@@ -99,6 +99,10 @@
       "description": "Open / close the current picture full screen",
       "global": true
     },
+    "toggle-video": {
+      "description": "Play / pause the video in the current post",
+      "global": true
+    },
     "toggle-fullscreen": {
       "description": "Full-screen mode on / off (open every post full screen)",
       "global": true

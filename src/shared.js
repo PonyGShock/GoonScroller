@@ -23,6 +23,7 @@ globalThis.GoonShared = {
     ['toggle-auto', 'Start / stop auto'],
     ['open-media', 'Open / close picture'],
     ['toggle-fullscreen', 'Full-screen mode on/off'],
+    ['toggle-video', 'Play / pause video'],
     ['upvote', 'Upvote / like'],
     ['save', 'Save / bookmark'],
   ],

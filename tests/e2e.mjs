@@ -615,20 +615,27 @@ await test('x: previous post', async () => {
   assert.equal(await postAt('article', 54), 't23');
 });
 
-await test('x: leaves video playback to X, and videos never open (it would leave the feed)', async () => {
+await test("x: starts videos X didn't start (without clicking X's buttons), play/pause key; videos never open", async () => {
   await open('https://x.com/home');
   const playing = (id) => page.evaluate((id) => {
     const v = document.querySelector(`#${id} video`);
     return v ? !v.paused : null;
   }, id);
   await cmd('next-post'); // t0
-  await cmd('next-post'); // t2: has a paused <video>
-  await wait(1200);
+  await cmd('next-post'); // t2: a <video> X didn't start
+  await wait(1800);
   assert.equal(await postAt('article', 54), 't2');
-  assert.equal(await playing('t2'), false, 'the extension must not start X videos');
-  await cmd('next-post'); // t3: video with X's play button
-  await wait(1200);
-  assert.equal(await playing('t3'), null, "X's play button must not be pressed");
+  assert.equal(await playing('t2'), true, 'should have been started');
+  await cmd('toggle-video');
+  await wait(200);
+  assert.equal(await playing('t2'), false, 'play/pause key pauses');
+  await cmd('toggle-video');
+  await wait(300);
+  assert.equal(await playing('t2'), true, 'and plays again');
+  await cmd('next-post'); // t3: only X's play button, no <video> yet
+  await wait(1800);
+  assert.equal(await playing('t2'), false, 'previous video paused when moving on');
+  assert.equal(await playing('t3'), null, "X's play button must not be clicked");
   await cmd('open-media'); // a video: refuse instead of opening the post page
   await wait(400);
   assert.equal(await page.evaluate(() => location.hash), '');

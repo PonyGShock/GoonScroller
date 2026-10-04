@@ -34,8 +34,10 @@ has focus.
   normal feed.
 - The feed never scrolls behind an open viewer: moving on always closes it first, so you don't end
   up 50 posts further when you close it.
-- **Autoplay videos (Reddit)**: starts the video in the post you land on and pauses it when you
-  move on. On X, X's own autoplay is left alone.
+- **Autoplay videos**: starts the video in the post you land on and pauses it when you move on. On
+  X it first gives X a second to start it, then starts the video itself if X didn't. It never clicks
+  X's play button and never restarts a video that was paused partway.
+- **Play / pause video**: a key (and panel button) for the video in the current post or viewer.
 - **Global hotkeys** that work while you're in a game.
 - A **small indicator** in the bottom-right corner with the auto-scroll countdown. You can turn it off.
 - Pages with no posts to snap to, such as X's media grid, scroll one screen at a time.
@@ -69,6 +71,7 @@ doesn't let extensions do that themselves.
 | Shorter / longer auto delay    | not set         |       |
 | Toggle "images & videos only"  | not set         |       |
 | Open / close picture           | not set         |       |
+| Play / pause video             | not set         |       |
 | Full-screen mode on / off      | not set         |       |
 | Upvote (Reddit) / like (X)     | not set         |       |
 | Save (Reddit) / bookmark (X)   | not set         |       |
@@ -125,7 +128,7 @@ Click the toolbar icon:
 - **Full-screen auto-scroll: open every post full screen** (only while auto-scroll runs)
 - **Only stop on images & videos**
 - **Pause while mouse is on the page**
-- **Autoplay videos (Reddit)**
+- **Autoplay videos**
 - **Let videos play**: don't wait, up to 30s / 1 / 2 / 5 minutes, or the whole video
 - **Smooth scrolling**
 - **Show indicator in the corner**
@@ -139,8 +142,9 @@ your account. Otherwise every post waits for a click.
   **Display media that may contain sensitive content**.
 - **Reddit:** Settings → Preferences → turn on **Show mature content (I'm over 18)** and turn off
   **Blur mature (18+) images and media**.
-- **X videos:** turn on X's own autoplay: Settings → Accessibility, display, and languages → Data
-  usage → **Autoplay**. GoonScroller leaves X's videos alone.
+- **X videos:** turn on X's own autoplay too: Settings → Accessibility, display, and languages → Data
+  usage → **Autoplay**. If X doesn't start a video (it sometimes won't when the video isn't fully on
+  screen or the window has no focus), GoonScroller starts it, and the play/pause key is there too.
 
 ## Known limitations
 

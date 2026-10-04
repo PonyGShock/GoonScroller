@@ -485,10 +485,36 @@
   let lastVideoTime = 0; // video position at the previous check, to notice a loop restarting
   let videoDueAt = 0; // when the current post's video should have played through
 
+  // Starts a <video> directly. Blocked with sound until the page has been clicked once; muted is
+  // always allowed.
+  const playVideo = (v) =>
+    v.play().catch(() => {
+      v.muted = true;
+      return v.play().catch(() => {});
+    });
+
+  // X: give X a moment to start the video itself; if it hasn't (it sometimes doesn't, e.g. when the
+  // video isn't fully on screen or the window has no focus), start the <video> directly. Never
+  // clicks X's play button, which toggles and would pause a video X is just starting.
+  let manualVideoPost = null; // post where the play/pause key was last used
+
+  async function autoplayX(post, token) {
+    for (let attempt = 0; attempt < 6 && token === navToken; attempt++) {
+      await sleep(attempt ? 500 : 1000);
+      if (token !== navToken) return;
+      if (manualVideoPost === post) return; // the play/pause key was used here: hands off
+      const videos = deepQueryAll(post, 'video').filter((v) => !v.ended);
+      if (!videos.length || videos.some((v) => !v.paused)) continue;
+      // Only a video that never started: one paused partway was paused on purpose (by you or X).
+      if (videos[0].currentTime > 0.1) return;
+      await playVideo(videos[0]);
+      if (!videos[0].paused) startedVideos.push(videos[0]);
+    }
+  }
+
   async function autoplay(post, token) {
-    // X autoplays by itself (when enabled there); stepping in only fights it, e.g. by hitting its
-    // play/pause button on a video it's already starting.
-    if (!settings.autoplayVideos || site?.name === 'X') return;
+    if (!settings.autoplayVideos) return;
+    if (site?.name === 'X') return autoplayX(post, token);
     for (let attempt = 0; attempt < 8 && token === navToken; attempt++) {
       const embedded = embeddedVideos(post);
       if (embedded.some((v) => !v.paused && !v.ended)) return;
@@ -897,6 +923,30 @@
       case 'open-media':
         toggleMedia();
         break;
+      case 'toggle-video': {
+        // The biggest video in the open viewer or the current post.
+        const scope = openViewer() ?? currentPost();
+        manualVideoPost = currentPost();
+        const video = scope && deepQueryAll(scope, 'video')
+          .filter((v) => v.getBoundingClientRect().height > 0)
+          .sort((a, b) => b.getBoundingClientRect().height - a.getBoundingClientRect().height)[0];
+        if (!video) {
+          if (scope && embeddedVideos(scope).length) {
+            const paused = embeddedVideos(scope)[0].paused;
+            tellFrames(scope, paused ? 'play' : 'pause');
+            hud.toast(paused ? '▶ Playing' : '❚❚ Paused');
+          } else hud.toast('No video here');
+          break;
+        }
+        if (video.paused || video.ended) {
+          playVideo(video);
+          hud.toast('▶ Playing');
+        } else {
+          video.pause();
+          hud.toast('❚❚ Paused');
+        }
+        break;
+      }
       case 'upvote':
       case 'save':
         postAction(command);
