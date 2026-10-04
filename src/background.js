@@ -83,7 +83,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 // Make it work in tabs that were already open, without having to reload them.
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  // Browsers don't let extensions set hotkeys to Global themselves, so walk the user through it.
+  if (reason === 'install') chrome.tabs.create({ url: 'popup/welcome.html' }).catch(() => {});
   for (const tab of await chrome.tabs.query({ url: SITE_PATTERNS })) {
     chrome.scripting.executeScript({ target: { tabId: tab.id }, files: CONTENT_FILES }).catch(() => {});
   }

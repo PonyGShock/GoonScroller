@@ -63,7 +63,10 @@ await context.route(/^https:\/\/www\.reddit\.com\/api\//, async (r) => {
 });
 
 const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
-const page = context.pages()[0] ?? (await context.newPage());
+// The setup page opens on install and becomes the active tab; wait for it, then work in our own tab.
+for (let i = 0; i < 50 && !context.pages().some((p) => p.url().endsWith('/popup/welcome.html')); i++) await wait(100);
+const page = context.pages().find((p) => !p.url().startsWith('chrome-extension://')) ?? (await context.newPage());
+await page.bringToFront();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 
@@ -628,6 +631,13 @@ await test('old reddit: auto mode carries over to the next page', async () => {
 });
 
 // ---------------------------------------------------------------- popup
+
+await test('setup page opened on install lists the hotkeys', async () => {
+  const welcome = context.pages().find((p) => p.url().endsWith('/popup/welcome.html'));
+  assert.ok(welcome, 'welcome page should open on first install');
+  const keys = await welcome.$$eval('#shortcuts li', (lis) => lis.map((li) => li.textContent));
+  assert.ok(keys.some((k) => k.includes('Next post') && k.includes('Ctrl+Shift+2')), keys.join(' | '));
+});
 
 await test('popup renders with hotkeys listed', async () => {
   const extId = new URL(sw.url()).host;

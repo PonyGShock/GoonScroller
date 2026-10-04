@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoonScroller setup</title>
+    <link rel="stylesheet" href="popup.css" />
+    <style>
+      html, body { width: auto; min-height: 100vh; }
+      body { max-width: 560px; margin: 0 auto; padding: 32px 20px; font-size: 14px; }
+      h1 { font-size: 20px; }
+      ol { padding-left: 20px; line-height: 1.6; }
+      li + li { margin-top: 6px; }
+      .cta { width: 100%; height: 44px; margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon-32.png" alt="" width="28" height="28" />
+      <h1>GoonScroller is installed</h1>
+    </header>
+
+    <section class="card">
+      <h2>One step left: make the hotkeys Global</h2>
+      <p>
+        The browser doesn't let extensions switch this on themselves, so it takes 30 seconds by hand.
+        Without it, the hotkeys only work while the browser window is focused.
+      </p>
+      <ol>
+        <li>Click the button below to open the shortcuts page.</li>
+        <li>Find <b>GoonScroller</b>. Give each action you want a key (click the pencil, press the keys).</li>
+        <li>Set the dropdown next to <b>every</b> key to <b>Global</b>.</li>
+        <li>Pick keys your game doesn't use, for example <code>Ctrl+Shift+1/2/3/4</code> or
+          <code>Ctrl+Shift+arrow keys</code>. Avoid <code>Ctrl+W/A/S/D</code>: Windows would grab them
+          from your game and freeze your movement.</li>
+      </ol>
+      <button id="open" class="primary cta">Open the shortcuts page</button>
+    </section>
+
+    <section class="card">
+      <h2>Your hotkeys right now</h2>
+      <ul id="shortcuts"></ul>
+      <p class="hint">Do this again after reinstalling or updating; the browser sometimes resets it.</p>
+    </section>
+
+    <p class="footer">🤖 GoonScroller was made with AI: written by Claude (Anthropic) in Claude Code, directed and
+      tested by PonyGShock. Free and open source under the MIT license.</p>
+
+    <script src="welcome.js"></script>
+  </body>
+</html>

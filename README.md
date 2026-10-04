@@ -1,5 +1,9 @@
 # GoonScroller
 
+> **🤖 Made with AI.** This whole project (the extension, its tests and these docs) was written by
+> Claude, Anthropic's AI model, in Claude Code. PonyGShock came up with the idea, directed it, and
+> tested every version on the real sites together with friends.
+
 A browser extension that scrolls Reddit and X **one post at a time, hands-free**. Put the feed on
 your second monitor and keep your hands on your mouse and WASD. A hotkey moves to the next post,
 or auto-scroll moves on its own every few seconds. The hotkeys keep working while a game or another app
@@ -43,6 +47,9 @@ inside redgifs embeds so it can see and start those videos.
 4. Pin the GoonScroller icon to your toolbar if you want quick access to the settings.
 
 Reddit/X tabs that are already open work straight away, without a reload.
+
+On first install a setup page opens. Follow it to set every hotkey to **Global**: the browser
+doesn't let extensions do that themselves.
 
 ## Hotkeys
 
@@ -163,6 +170,11 @@ fix them, but most have a workaround.
   (for example YouTube) are shown, but auto-scroll can't see how long they are.
 - **If Reddit or X change their page layout**, post detection or buttons may stop working until the
   extension is updated. The selectors are at the top of `src/content.js`.
+
+## License and privacy
+
+Free and open source under the [MIT license](LICENSE). No tracking and no data collection; see the
+[privacy policy](PRIVACY.md). Publishing steps are in [RELEASING.md](RELEASING.md).
 
 ## Development
 
