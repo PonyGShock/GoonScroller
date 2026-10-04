@@ -142,7 +142,22 @@
       return 'closed';
     }
     const post = currentPost();
-    const target = post && MEDIA_TARGETS.map((s) => deepQueryAll(post, s).find((el) => el.getBoundingClientRect().height > 0)).find(Boolean);
+    let target;
+    if (site?.name === 'X') {
+      // X only has a full-screen viewer for photos; clicking a video (or anything else) opens the
+      // post's own page instead, so don't click those.
+      const photos = post ? deepQueryAll(post, '[data-testid="tweetPhoto"]').filter((p) => p.getBoundingClientRect().height > 0) : [];
+      const photo = photos.find((p) => !p.querySelector('video, [data-testid="videoPlayer"], [data-testid="videoComponent"]'));
+      if (!photo) {
+        if (post?.querySelector('video, [data-testid="videoPlayer"], [data-testid="videoComponent"]')) {
+          hud.toast("Videos can't open full screen on X");
+        } else if (!quiet) hud.toast('No picture to open');
+        return null;
+      }
+      target = photo.querySelector('img') ?? photo;
+    } else {
+      target = post && MEDIA_TARGETS.map((s) => deepQueryAll(post, s).find((el) => el.getBoundingClientRect().height > 0)).find(Boolean);
+    }
     if (!target) {
       if (!quiet) hud.toast('No picture to open');
       return null;
@@ -463,7 +478,9 @@
   let videoDueAt = 0; // when the current post's video should have played through
 
   async function autoplay(post, token) {
-    if (!settings.autoplayVideos) return;
+    // X autoplays by itself (when enabled there); stepping in only fights it, e.g. by hitting its
+    // play/pause button on a video it's already starting.
+    if (!settings.autoplayVideos || site?.name === 'X') return;
     for (let attempt = 0; attempt < 8 && token === navToken; attempt++) {
       const embedded = embeddedVideos(post);
       if (embedded.some((v) => !v.paused && !v.ended)) return;

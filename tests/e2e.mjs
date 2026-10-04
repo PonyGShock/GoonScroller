@@ -611,7 +611,7 @@ await test('x: previous post', async () => {
   assert.equal(await postAt('article', 54), 't23');
 });
 
-await test('x: videos start when the scroller lands on them and pause when it moves on', async () => {
+await test('x: leaves video playback to X, and videos never open (it would leave the feed)', async () => {
   await open('https://x.com/home');
   const playing = (id) => page.evaluate((id) => {
     const v = document.querySelector(`#${id} video`);
@@ -621,17 +621,16 @@ await test('x: videos start when the scroller lands on them and pause when it mo
   await cmd('next-post'); // t2: has a paused <video>
   await wait(1200);
   assert.equal(await postAt('article', 54), 't2');
-  assert.equal(await playing('t2'), true);
-  await cmd('next-post'); // t3: only a play button
-  await wait(1500);
-  assert.equal(await playing('t2'), false, 'previous video should be paused');
-  assert.equal(await playing('t3'), true, 'play button should have been pressed');
-  await setSettings({ autoplayVideos: false });
-  await cmd('previous-post');
+  assert.equal(await playing('t2'), false, 'the extension must not start X videos');
+  await cmd('next-post'); // t3: video with X's play button
   await wait(1200);
-  assert.equal(await playing('t2'), false);
-  await setSettings({ autoplayVideos: true });
-  await cmd('next-post');
+  assert.equal(await playing('t3'), null, "X's play button must not be pressed");
+  await cmd('open-media'); // a video: refuse instead of opening the post page
+  await wait(400);
+  assert.equal(await page.evaluate(() => location.hash), '');
+  assert.equal(await page.locator('#viewer').count(), 0);
+  await cmd('previous-post');
+  await cmd('previous-post'); // back to t0
   await wait(800);
 });
 

@@ -45,10 +45,10 @@
             const media = n % 3 !== 1;
             h = media ? 300 + ((n * 61) % 300) : 120;
             cell.innerHTML = `<article id="t${n}" data-testid="tweet" style="height:${h}px">tweet ${n}${
-              media ? `<div data-testid="tweetPhoto" style="height:${h - 80}px"></div>` : ''
-            }${n === 2 ? '<video src="https://media.test/clip.webm" preload="auto" style="height:40px"></video>' : ''}${
-              n === 3 ? '<div data-testid="videoPlayer"><button data-testid="playButton" aria-label="Play">▶</button></div>' : ''
-            }<button data-testid="like">♥</button><button data-testid="bookmark">🔖</button></article>`;
+              media ? `<div data-testid="tweetPhoto" style="height:${h - 80}px">${
+                n === 3 ? '<div data-testid="videoPlayer"><button data-testid="playButton" aria-label="Play">▶</button></div>' : ''
+              }</div>` : ''
+            }${n === 2 ? '<video src="https://media.test/clip.webm" preload="auto" style="height:40px"></video>' : ''}<button data-testid="like">♥</button><button data-testid="bookmark">🔖</button></article>`;
           }
           list.append(cell);
           y += h;
@@ -63,7 +63,11 @@
           v.play();
           return;
         }
-        // Clicking a photo opens a viewer dialog with slide arrows and a close button.
+        // Clicking a video goes to the post's own page (like X); a photo opens the viewer dialog.
+        if (e.target.closest?.('[data-testid="tweetPhoto"]')?.querySelector('[data-testid="videoPlayer"]')) {
+          location.hash = 'status';
+          return;
+        }
         if (e.target.closest?.('[data-testid="tweetPhoto"]') && !document.getElementById('viewer')) {
           const d = document.createElement('div');
           d.id = 'viewer';

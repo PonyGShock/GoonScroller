@@ -34,8 +34,8 @@ has focus.
   normal feed.
 - The feed never scrolls behind an open viewer: moving on always closes it first, so you don't end
   up 50 posts further when you close it.
-- **Autoplay videos**: starts the video in the post you land on (X often won't by itself) and
-  pauses it when you move on.
+- **Autoplay videos (Reddit)**: starts the video in the post you land on and pauses it when you
+  move on. On X, X's own autoplay is left alone.
 - **Global hotkeys** that work while you're in a game.
 - A **small indicator** in the bottom-right corner with the auto-scroll countdown. You can turn it off.
 - Pages with no posts to snap to, such as X's media grid, scroll one screen at a time.
@@ -125,7 +125,7 @@ Click the toolbar icon:
 - **Full-screen auto-scroll: open every post full screen** (only while auto-scroll runs)
 - **Only stop on images & videos**
 - **Pause while mouse is on the page**
-- **Autoplay videos**
+- **Autoplay videos (Reddit)**
 - **Let videos play**: don't wait, up to 30s / 1 / 2 / 5 minutes, or the whole video
 - **Smooth scrolling**
 - **Show indicator in the corner**
@@ -139,8 +139,8 @@ your account. Otherwise every post waits for a click.
   **Display media that may contain sensitive content**.
 - **Reddit:** Settings → Preferences → turn on **Show mature content (I'm over 18)** and turn off
   **Blur mature (18+) images and media**.
-- **X videos:** GoonScroller's **Autoplay videos** option starts them for you. X's own switch is
-  under Settings → Accessibility, display, and languages → Data usage → **Autoplay**.
+- **X videos:** turn on X's own autoplay: Settings → Accessibility, display, and languages → Data
+  usage → **Autoplay**. GoonScroller leaves X's videos alone.
 
 ## Known limitations
 
@@ -174,6 +174,8 @@ fix them, but most have a workaround.
   sound on their own before that.
 - **After saving on Reddit, Reddit's own Save button may still say "Save"** until you refresh the
   page. The post is saved; check your saved posts.
+- **On X, only pictures open full screen.** X has no full-screen viewer for videos (clicking one
+  opens the post's page), so GoonScroller shows a message instead and auto-scroll leaves it in the feed.
 - **Only Reddit's own videos, X videos and redgifs embeds are waited for.** Other embedded players
   (for example YouTube) are shown, but auto-scroll can't see how long they are.
 - **If Reddit or X change their page layout**, post detection or buttons may stop working until the
