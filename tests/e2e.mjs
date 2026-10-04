@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.join(here, '..', 'extension');
+const extensionPath = path.join(here, '..');
 const fixture = (name) => readFileSync(path.join(here, 'fixtures', name), 'utf8');
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

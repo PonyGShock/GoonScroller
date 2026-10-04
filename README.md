@@ -30,7 +30,9 @@ Using Firefox? See [Firefox](#firefox) below.
 
 1. Download this repo (**Code → Download ZIP**, then unzip) or `git clone` it.
 2. Open `chrome://extensions` (in Edge: `edge://extensions`) and turn on **Developer mode**.
-3. Click **Load unpacked** and select the **`extension`** folder.
+3. Click **Load unpacked** and select the unzipped **GoonScroller** folder: the one that has
+   `manifest.json` directly inside it. Windows sometimes unzips into a folder inside a folder;
+   pick the inner one.
 4. Pin the GoonScroller icon to your toolbar if you want quick access to the settings.
 
 Reddit/X tabs that are already open work straight away, without a reload.
@@ -92,7 +94,7 @@ your account. Otherwise every post waits for a click.
 - Keep the browser window visible, for example on your second monitor. Chrome slows down timers in
   minimized windows and background tabs, and auto-scroll waits while its tab is hidden.
 - If Reddit or X change their page layout and posts stop being detected, look at the selectors
-  at the top of `extension/src/content.js`.
+  at the top of `src/content.js`.
 - On Linux under Wayland, global hotkeys may not work, depending on your desktop.
 
 ## Firefox
@@ -112,10 +114,10 @@ What that means in practice:
 Installing in Firefox:
 
 - **Quick test:** open `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** →
-  pick `extension/manifest.json`. It's removed when Firefox restarts.
+  pick `manifest.json`. It's removed when Firefox restarts.
 - **To keep it:** regular Firefox only installs signed add-ons. Signing is free: make an account on
   [addons.mozilla.org](https://addons.mozilla.org/developers/), zip the *contents* of the
-  `extension` folder, submit it as **"On your own"** (unlisted), and install the signed `.xpi` it
+  GoonScroller folder, submit it as **"On your own"** (unlisted), and install the signed `.xpi` it
   gives you back. Or use Firefox Developer Edition / Nightly and set
   `xpinstall.signatures.required` to `false` in `about:config`.
 - Firefox may ask you to allow access to reddit.com and x.com. Allow it (or right-click the icon
