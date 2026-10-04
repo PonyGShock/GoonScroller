@@ -12,8 +12,10 @@ looks at the page to find posts, pictures, videos and buttons, so it can scroll 
 pause videos. This happens only in your browser. Nothing from those pages is copied anywhere.
 
 **Network requests.** The only requests the extension makes itself are when *you* press Save on
-Reddit: it asks reddit.com, with your existing Reddit login, to save or unsave that post, the same
-request Reddit's own Save button makes. Nothing is sent anywhere else.
+Reddit: it asks Reddit (reddit.com, or oauth.reddit.com for the newer kind of Reddit login), with
+your existing Reddit login, to save or unsave that post and to check that it worked. These are the
+same kind of requests Reddit's own Save button makes. Your login is only used for that and never
+sent anywhere else.
 
 **Permissions and why:**
 

@@ -231,9 +231,9 @@
     const post = currentPost();
     const last = lastAction[kind];
     if (post && last?.post === post && Date.now() - last.at < ACTION_COOLDOWN) return hud.toast('Wait a moment…');
-    lastAction[kind] = { post, at: Date.now() };
     const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
-    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'Could not save this post');
+    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : "Couldn't save this post");
+    lastAction[kind] = { post, at: Date.now() }; // only a press that did something starts the cooldown
     if (control.message) return hud.toast(control.message);
     realClick(control.el);
     hud.toast(control.on ? control.words[1] : control.words[0]);
@@ -241,28 +241,51 @@
 
   // Reddit's API with the logged-in session, the same calls the Save button makes. Returns the
   // toast text, or null when it can't (not logged in, no post id, request refused).
+  // Two kinds of Reddit login exist: the older session (works with a "modhash") and the newer one
+  // (a token_v2 cookie, used with Reddit's OAuth API). Each attempt checks afterwards that the post
+  // really changed, because Reddit can answer "OK" without saving.
   let modhash = null;
   async function redditApiSave(post) {
     const raw = [post.getAttribute('id'), post.getAttribute('post-id'), post.getAttribute('thingid'), post.dataset.fullname]
       .find((v) => /^(t3_)?[a-z0-9]+$/i.test(v || ''));
     if (!raw) return null;
     const id = raw.startsWith('t3_') ? raw : `t3_${raw}`;
+    return (await legacySave(id).catch(() => null)) ?? (await oauthSave(id).catch(() => null));
+  }
+
+  const savedState = (info) => info?.data?.children?.[0]?.data?.saved;
+
+  async function legacySave(id) {
     const json = async (url) => (await fetch(url, { credentials: 'include' })).json();
     modhash ??= (await json('/api/me.json'))?.data?.modhash || null;
     if (!modhash) return null;
-    const info = await json(`/api/info.json?id=${id}`);
-    const saved = info?.data?.children?.[0]?.data?.saved === true;
-    const res = await fetch(saved ? '/api/unsave' : '/api/save', {
+    const before = savedState(await json(`/api/info.json?id=${id}`));
+    if (typeof before !== 'boolean') return null;
+    const res = await fetch(before ? '/api/unsave' : '/api/save', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Modhash': modhash },
       body: new URLSearchParams({ id, uh: modhash }),
     });
-    if (!res.ok) {
-      modhash = null; // may have expired; fetch a fresh one next time
+    const after = res.ok ? savedState(await json(`/api/info.json?id=${id}`)) : before;
+    if (after === before) {
+      modhash = null; // may have expired or not apply to this login; fetch a fresh one next time
       return null;
     }
-    return saved ? 'Unsaved' : 'Saved';
+    return after ? 'Saved' : 'Unsaved';
+  }
+
+  async function oauthSave(id) {
+    const token = document.cookie.match(/(?:^|;\s*)token_v2=([^;]+)/)?.[1];
+    if (!token) return null;
+    // Sent from the background worker: the page itself isn't allowed to call oauth.reddit.com.
+    const call = (method, path, body) => chrome.runtime.sendMessage({ type: 'reddit-oauth', method, path, body, token });
+    const before = savedState((await call('GET', `/api/info?id=${id}`))?.json);
+    if (typeof before !== 'boolean') return null;
+    const res = await call('POST', before ? '/api/unsave' : '/api/save', `id=${encodeURIComponent(id)}`);
+    if (!res?.ok) return null;
+    const after = savedState((await call('GET', `/api/info?id=${id}`))?.json);
+    return after === before || typeof after !== 'boolean' ? null : after ? 'Saved' : 'Unsaved';
   }
 
   // Fallback: open the post's "…" menu and click Save. Found by Reddit's icon names

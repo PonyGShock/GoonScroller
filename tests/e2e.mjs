@@ -7,6 +7,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Let context.route() also see requests made by the extension's background worker.
+process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const extensionPath = path.join(here, '..');
 const fixture = (name) => readFileSync(path.join(here, 'fixtures', name), 'utf8');
@@ -42,7 +45,8 @@ await context.route(/^https:\/\/www\.redgifs\.com\/ifr\//, (r) =>
 );
 
 // Fake Reddit API for saving: logged in (or not), remembers what's saved, checks the modhash.
-const redditApi = { loggedIn: true, saved: new Set(), calls: [] };
+// legacyNoop: the old session endpoint answers OK but doesn't save (seen with the newer login).
+const redditApi = { loggedIn: true, legacyNoop: false, saved: new Set(), calls: [] };
 await context.route(/^https:\/\/www\.reddit\.com\/api\//, async (r) => {
   const url = new URL(r.request().url());
   const json = (body, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -54,12 +58,28 @@ await context.route(/^https:\/\/www\.reddit\.com\/api\//, async (r) => {
   }
   if (url.pathname === '/api/save' || url.pathname === '/api/unsave') {
     if (r.request().headers()['x-modhash'] !== 'mh123') return json({}, 403);
+    if (redditApi.legacyNoop) return json({});
     const id = new URLSearchParams(r.request().postData()).get('id');
     if (url.pathname === '/api/save') redditApi.saved.add(id);
     else redditApi.saved.delete(id);
     return json({});
   }
   return json({}, 404);
+});
+// Reddit's OAuth API, used with the newer login's token_v2 cookie.
+await context.route(/^https:\/\/oauth\.reddit\.com\/api\//, async (r) => {
+  const url = new URL(r.request().url());
+  const json = (body, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+  if (r.request().headers().authorization !== 'Bearer tok123') return json({}, 401);
+  redditApi.calls.push(`oauth${url.pathname}`);
+  if (url.pathname === '/api/info') {
+    const id = url.searchParams.get('id');
+    return json({ data: { children: [{ data: { name: id, saved: redditApi.saved.has(id) } }] } });
+  }
+  const id = new URLSearchParams(r.request().postData()).get('id');
+  if (url.pathname === '/api/save') redditApi.saved.add(id);
+  else if (url.pathname === '/api/unsave') redditApi.saved.delete(id);
+  return json({});
 });
 
 const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
@@ -407,6 +427,24 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   assert.deepEqual([...redditApi.saved], [`t3_${mostVisible}`]);
   redditApi.saved.clear();
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null, 'menu should not have been used');
+
+  // Newer login: the old endpoint says OK but doesn't save; the check notices and the token_v2
+  // (OAuth) route saves it.
+  redditApi.legacyNoop = true;
+  await context.addCookies([{ name: 'token_v2', value: 'tok123', domain: '.reddit.com', path: '/' }]);
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2
+  await wait(600);
+  redditApi.calls.length = 0;
+  await cmd('save');
+  await wait(800);
+  assert.deepEqual([...redditApi.saved], ['t3_p2']);
+  assert.ok(redditApi.calls.includes('oauth/api/save'), redditApi.calls.join(', '));
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), null, 'menu should not have been used');
+  redditApi.saved.clear();
+  redditApi.legacyNoop = false;
+  await context.clearCookies();
 
   // API not available: falls back to the "…" menu, found by icon names (labels are Dutch here).
   redditApi.loggedIn = false;

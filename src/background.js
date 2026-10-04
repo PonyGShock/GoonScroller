@@ -68,6 +68,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.on) chrome.action.setBadgeBackgroundColor({ tabId, color: '#ff4f6d' }).catch(() => {});
     return;
   }
+  // Reddit save for the newer login (token_v2): oauth.reddit.com, with the user's own token.
+  if (msg?.type === 'reddit-oauth' && sender.tab && /^\/api\/(info|save|unsave)\b/.test(msg.path || '')) {
+    fetch(`https://oauth.reddit.com${msg.path}`, {
+      method: msg.method === 'POST' ? 'POST' : 'GET',
+      headers: {
+        Authorization: `Bearer ${msg.token}`,
+        ...(msg.method === 'POST' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+      },
+      body: msg.method === 'POST' ? msg.body : undefined,
+    })
+      .then(async (res) => sendResponse({ ok: res.ok, status: res.status, json: await res.json().catch(() => null) }))
+      .catch(() => sendResponse(null));
+    return true;
+  }
   if (msg?.type === 'get-shortcuts') {
     chrome.commands.getAll().then(
       (cmds) => sendResponse(cmds.filter((c) => c.shortcut && c.name !== '_execute_action')),
