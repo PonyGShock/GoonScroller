@@ -105,30 +105,17 @@
         const words = ['Saved', 'Unsaved'];
         const old = post.querySelector('.save-button a, a.save-button');
         if (old) return { el: old, on: /unsave/i.test(old.textContent), words };
-        // New Reddit keeps "Save" in the post's "…" menu, which may need opening first.
-        // Click the innermost match (e.g. the div[role=menuitem], not the <li> around it): sites
-        // attach the handler to the item itself, and a click on the wrapper never reaches it.
-        const find = (root) => {
-          const hits = deepQueryAll(root, BUTTONS).filter((b) => SAVE_LABEL.test(labelOf(b)));
-          return hits.find((h) => !hits.some((o) => o !== h && h.contains(o))) ?? null;
-        };
-        let el = find(post);
-        if (!el) {
-          const menu = findIn(post, 'button', (b) => /overflow|more options|meer opties|open user actions/i.test(b.getAttribute('aria-label') || ''));
-          if (!menu) return null;
-          menu.click();
-          for (let i = 0; i < 15 && !el; i++) {
-            await sleep(100);
-            el = find(post) ?? find(document);
-          }
-          if (!el) menu.click(); // close the menu again
-        }
-        return el && { el, on: SAVED_LABEL.test(labelOf(el)), words };
+        // New Reddit: save through Reddit's own API (no menu, works in any language); the "…" menu
+        // is only the fallback.
+        const message = await redditApiSave(post).catch(() => null);
+        if (message) return { message };
+        return saveViaMenu(post, words);
       },
     },
   };
 
-  const VIDEO_PLAYERS = 'shreddit-player, shreddit-player-2, [data-testid="videoPlayer"], [data-testid="videoComponent"]';
+  const VIDEO_PLAYERS =
+    'shreddit-player, shreddit-player-2, shreddit-embed, iframe[src*="redgifs."], [data-testid="videoPlayer"], [data-testid="videoComponent"]';
   const MEDIA_TARGETS = [
     '[data-testid="tweetPhoto"] img',
     '[data-testid="tweetPhoto"]',
@@ -173,9 +160,67 @@
   async function postAction(kind) {
     const post = currentPost();
     const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
-    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'No save button found');
-    control.el.click();
+    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'Could not save this post');
+    if (control.message) return hud.toast(control.message);
+    realClick(control.el);
     hud.toast(control.on ? control.words[1] : control.words[0]);
+  }
+
+  // Reddit's API with the logged-in session, the same calls the Save button makes. Returns the
+  // toast text, or null when it can't (not logged in, no post id, request refused).
+  let modhash = null;
+  async function redditApiSave(post) {
+    const raw = [post.getAttribute('id'), post.getAttribute('post-id'), post.getAttribute('thingid'), post.dataset.fullname]
+      .find((v) => /^(t3_)?[a-z0-9]+$/i.test(v || ''));
+    if (!raw) return null;
+    const id = raw.startsWith('t3_') ? raw : `t3_${raw}`;
+    const json = async (url) => (await fetch(url, { credentials: 'include' })).json();
+    modhash ??= (await json('/api/me.json'))?.data?.modhash || null;
+    if (!modhash) return null;
+    const info = await json(`/api/info.json?id=${id}`);
+    const saved = info?.data?.children?.[0]?.data?.saved === true;
+    const res = await fetch(saved ? '/api/unsave' : '/api/save', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Modhash': modhash },
+      body: new URLSearchParams({ id, uh: modhash }),
+    });
+    if (!res.ok) {
+      modhash = null; // may have expired; fetch a fresh one next time
+      return null;
+    }
+    return saved ? 'Unsaved' : 'Saved';
+  }
+
+  // Fallback: open the post's "…" menu and click Save. Found by Reddit's icon names
+  // ("overflow-horizontal", "save") so it doesn't depend on the language; labels as a backup.
+  async function saveViaMenu(post, words) {
+    const itemOf = (el) => el.closest('[role="menuitem"], button, a') ?? el.closest('li');
+    const find = (root) => {
+      const icon = deepQueryAll(root, '[icon-name^="save"], [icon-name^="unsave"]').map(itemOf).find(Boolean);
+      if (icon) return icon;
+      const hits = deepQueryAll(root, BUTTONS).filter((b) => SAVE_LABEL.test(labelOf(b)));
+      return hits.find((h) => !hits.some((o) => o !== h && h.contains(o))) ?? null;
+    };
+    let el = find(post);
+    if (!el) {
+      const trigger =
+        deepQueryAll(post, '[icon-name^="overflow"]').map((i) => i.closest('button, [role="button"]')).find(Boolean) ??
+        deepQueryAll(post, '*').filter((x) => x.localName.includes('overflow-menu')).flatMap((x) => deepQueryAll(x, 'button'))[0] ??
+        findIn(post, 'button', (b) => /overflow|more|opties|acties|actions/i.test(b.getAttribute('aria-label') || ''));
+      if (!trigger) return null;
+      realClick(trigger);
+      for (let i = 0; i < 30 && !el; i++) {
+        await sleep(100);
+        el = find(post) ?? find(document);
+      }
+      if (!el) {
+        realClick(trigger); // close the menu again
+        return null;
+      }
+    }
+    const icon = deepQueryAll(el, '[icon-name]')[0]?.getAttribute('icon-name') || '';
+    return { el, on: /unsave|fill/i.test(icon) || SAVED_LABEL.test(labelOf(el)), words };
   }
 
   const site = SITES.find((s) => s.host.test(location.hostname)) ?? null;
@@ -326,9 +371,49 @@
 
   // Start the video in the post we landed on. X only autoplays with its own setting on, and often
   // not in a window without focus. Retries briefly because players load lazily.
+  // Video state reported by embedded players (redgifs iframes) through src/frame.js.
+  const frameVideos = new Map(); // the embed's window -> its latest report
+  listen(window, 'message', (e) => {
+    if (e.data?.goonscroller !== 'frame-video' || !e.source) return;
+    frameVideos.set(e.source, { ...e.data, at: Date.now() });
+    for (const [win, state] of frameVideos) if (Date.now() - state.at > 10000) frameVideos.delete(win);
+  });
+
+  // Videos inside the post's iframes, shaped like <video> elements (duration, currentTime, ...).
+  function embeddedVideos(post) {
+    const out = [];
+    for (const iframe of deepQueryAll(post, 'iframe')) {
+      const win = iframe.contentWindow;
+      if (!win) continue;
+      for (const [source, state] of frameVideos) {
+        if (Date.now() - state.at > 2000) continue;
+        if (source === win || source.parent === win) out.push({ ...state, duration: state.duration ?? NaN });
+      }
+    }
+    return out;
+  }
+
+  // Sends play/pause to the post's iframes (and frames nested one level inside them).
+  function tellFrames(post, what) {
+    for (const iframe of deepQueryAll(post, 'iframe')) {
+      const win = iframe.contentWindow;
+      if (!win) continue;
+      win.postMessage({ goonscroller: what }, '*');
+      for (let i = 0; i < win.length; i++) win[i].postMessage({ goonscroller: what }, '*');
+    }
+  }
+
+  let startedFramePosts = [];
+
   async function autoplay(post, token) {
     if (!settings.autoplayVideos) return;
     for (let attempt = 0; attempt < 8 && token === navToken; attempt++) {
+      const embedded = embeddedVideos(post);
+      if (embedded.some((v) => !v.paused && !v.ended)) return;
+      if (deepQueryAll(post, 'iframe').length && attempt % 2 === 0) {
+        tellFrames(post, 'play');
+        if (!startedFramePosts.includes(post)) startedFramePosts.push(post);
+      }
       const videos = deepQueryAll(post, 'video');
       if (videos.some((v) => !v.paused && !v.ended)) return; // the site started it
       const video = videos.find((v) => !v.ended);
@@ -351,6 +436,8 @@
   function pauseStartedVideos() {
     for (const v of startedVideos) if (!v.paused) v.pause();
     startedVideos = [];
+    for (const post of startedFramePosts) if (post.isConnected) tellFrames(post, 'pause');
+    startedFramePosts = [];
   }
 
   function realign(el) {
@@ -543,8 +630,8 @@
     const left = (limit < 0 ? Infinity : limit * 1000) - elapsed;
     if (left <= 300) return null;
 
-    const videos = deepQueryAll(cursor, 'video');
-    const player = videos.length || cursor.querySelector(VIDEO_PLAYERS);
+    const videos = [...deepQueryAll(cursor, 'video'), ...embeddedVideos(cursor)];
+    const player = videos.length || deepQueryAll(cursor, VIDEO_PLAYERS).length;
     if (!player) return null;
     const video = videos
       .filter((v) => Number.isFinite(v.duration) && v.duration > 0)

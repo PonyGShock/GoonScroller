@@ -25,6 +25,43 @@ await context.route(/^https:\/\/old\.reddit\.com\//, (r) => r.fulfill({ contentT
 await context.route(/^https:\/\/x\.com\//, (r) => r.fulfill({ contentType: 'text/html', body: fixture('x.html') }));
 await context.route('https://media.test/clip.webm', (r) => r.fulfill({ contentType: 'video/webm', body: videoBody }));
 
+// Fake redgifs embed: a looping video that doesn't autoplay (the scroller has to start it).
+await context.route(/^https:\/\/www\.redgifs\.com\/ifr\//, (r) =>
+  r.fulfill({
+    contentType: 'text/html',
+    body: `<!doctype html><body style="margin:0"><video id="v" loop muted src="https://media.test/clip.webm" style="width:100%"></video>
+      <script>
+        // MediaRecorder clips report no duration until read through once.
+        v.onloadedmetadata = () => {
+          if (Number.isFinite(v.duration)) return;
+          v.currentTime = 1e9;
+          v.ontimeupdate = () => { v.ontimeupdate = null; v.currentTime = 0; };
+        };
+      </script></body>`,
+  }),
+);
+
+// Fake Reddit API for saving: logged in (or not), remembers what's saved, checks the modhash.
+const redditApi = { loggedIn: true, saved: new Set(), calls: [] };
+await context.route(/^https:\/\/www\.reddit\.com\/api\//, async (r) => {
+  const url = new URL(r.request().url());
+  const json = (body, status = 200) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+  redditApi.calls.push(url.pathname);
+  if (url.pathname === '/api/me.json') return json(redditApi.loggedIn ? { kind: 't2', data: { modhash: 'mh123' } } : {});
+  if (url.pathname === '/api/info.json') {
+    const id = url.searchParams.get('id');
+    return json({ data: { children: [{ data: { name: id, saved: redditApi.saved.has(id) } }] } });
+  }
+  if (url.pathname === '/api/save' || url.pathname === '/api/unsave') {
+    if (r.request().headers()['x-modhash'] !== 'mh123') return json({}, 403);
+    const id = new URLSearchParams(r.request().postData()).get('id');
+    if (url.pathname === '/api/save') redditApi.saved.add(id);
+    else redditApi.saved.delete(id);
+    return json({});
+  }
+  return json({}, 404);
+});
+
 const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
 const page = context.pages()[0] ?? (await context.newPage());
 const errors = [];
@@ -329,7 +366,7 @@ await test('reddit: gallery hotkeys work inside the full-screen image viewer', a
   await setSettings({ pageKeys: {} });
 });
 
-await test('reddit: upvote and save (via the "…" menu) the current post', async () => {
+await test('reddit: upvote, and save via the API or the "…" menu', async () => {
   await setSettings({ smooth: false });
   await open('https://www.reddit.com/r/test/');
   await cmd('next-post');
@@ -341,12 +378,30 @@ await test('reddit: upvote and save (via the "…" menu) the current post', asyn
   await cmd('upvote');
   assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'false');
   await cmd('upvote');
+
+  // Logged in: saved through Reddit's API, no menu involved.
   await cmd('save');
-  await wait(300);
+  await wait(500);
+  assert.deepEqual([...redditApi.saved], ['t3_p2']);
+  await cmd('save'); // again: unsave
+  await wait(500);
+  assert.deepEqual([...redditApi.saved], []);
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), null, 'menu should not have been used');
+
+  // API not available: falls back to the "…" menu, found by icon names (labels are Dutch here).
+  redditApi.loggedIn = false;
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2
+  await wait(600);
+  await cmd('save');
+  await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
   await cmd('save');
-  await wait(300);
+  await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
+  assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('ul').children.length), 0, 'menu closed');
+  redditApi.loggedIn = true;
 });
 
 await test('reddit: looping videos play through once, up to the "let videos play" limit', async () => {
@@ -398,6 +453,39 @@ await test('reddit: looping videos play through once, up to the "let videos play
   const off = await timeOnP2();
   assert.ok(off < 2, `off: stayed ${off}s`);
   await setSettings({ videoWait: 60, flipGalleries: true });
+});
+
+await test('reddit: redgifs embeds count as videos: started, and waited for', async () => {
+  await setSettings({ delay: 1, videoWait: -1, flipGalleries: false, smooth: false });
+  await open('https://www.reddit.com/r/test/');
+  await page.evaluate(() => {
+    const embed = document.createElement('shreddit-embed');
+    embed.innerHTML = '<iframe src="https://www.redgifs.com/ifr/abc" style="width:400px;height:220px;border:0"></iframe>';
+    document.querySelector('#p2').append(embed);
+  });
+  await wait(1500); // let the embed load its clip
+  const frame = page.frames().find((f) => f.url().includes('redgifs.com/ifr'));
+  const duration = await frame.evaluate(() => v.duration);
+  assert.equal(await frame.evaluate(() => v.paused), true);
+  await cmd('next-post'); // p0
+  await wait(600);
+  await cmd('toggle-auto');
+  let arrived = 0;
+  let wasPlaying = false;
+  for (let i = 0; i < 200; i++) {
+    const at = await postAt('shreddit-post', 61);
+    if (at === 'p2' && !arrived) arrived = Date.now();
+    if (arrived && at === 'p2' && !(await frame.evaluate(() => v.paused))) wasPlaying = true;
+    if (arrived && at !== 'p2') break;
+    await wait(100);
+  }
+  const stayed = (Date.now() - arrived) / 1000;
+  await cmd('toggle-auto');
+  assert.equal(wasPlaying, true, 'redgifs video should have been started');
+  assert.ok(stayed >= duration - 0.3 && stayed < duration + 2.5, `stayed ${stayed}s for a ${duration}s redgifs clip`);
+  await wait(300);
+  assert.equal(await frame.evaluate(() => v.paused), true, 'paused after moving on');
+  await setSettings({ videoWait: 60, flipGalleries: true, delay: 6 });
 });
 
 await test('reddit: open / close picture key opens the gallery in the full-screen viewer', async () => {

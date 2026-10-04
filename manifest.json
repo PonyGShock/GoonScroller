@@ -31,7 +31,8 @@
   "host_permissions": [
     "*://*.reddit.com/*",
     "*://*.x.com/*",
-    "*://*.twitter.com/*"
+    "*://*.twitter.com/*",
+    "*://*.redgifs.com/*"
   ],
   "content_scripts": [
     {
@@ -44,6 +45,16 @@
         "src/shared.js",
         "src/content.js"
       ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.redgifs.com/*"
+      ],
+      "js": [
+        "src/frame.js"
+      ],
+      "all_frames": true,
       "run_at": "document_idle"
     }
   ],

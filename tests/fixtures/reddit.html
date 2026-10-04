@@ -92,14 +92,17 @@
           if (this.shadowRoot) return;
           const root = this.attachShadow({ mode: 'open' });
           root.innerHTML = `<div class="bar"><button upvote aria-label="Upvote" aria-pressed="false">⬆</button>
-            <button aria-label="Open user actions">…</button><ul role="menu"></ul></div><slot></slot><slot name="post-media-container"></slot>`;
+            <button aria-label="Gebruikersacties openen"><svg icon-name="overflow-horizontal-outline"></svg></button>
+            <ul role="menu"></ul></div><slot></slot><slot name="post-media-container"></slot>`;
           const [up, more] = root.querySelectorAll('button');
           const menu = root.querySelector('ul');
           up.onclick = () => up.setAttribute('aria-pressed', String(up.getAttribute('aria-pressed') !== 'true'));
           more.onclick = () => {
             if (menu.children.length) return menu.replaceChildren(); // toggles closed
-            menu.innerHTML = `<li><div role="menuitem" tabindex="-1"><span>${this.dataset.saved ? 'Unsave' : 'Save'}</span></div></li>
-              <li><div role="menuitem" tabindex="-1"><span>Hide</span></div></li>`;
+            const saved = !!this.dataset.saved;
+            menu.innerHTML = `<li><div role="menuitem" tabindex="-1"><svg icon-name="${saved ? 'save-fill' : 'save-outline'}"></svg>
+                <span>${saved ? 'Verwijderen uit opgeslagen' : 'Opslaan'}</span></div></li>
+              <li><div role="menuitem" tabindex="-1"><svg icon-name="hide-outline"></svg><span>Verbergen</span></div></li>`;
             menu.querySelector('div').onclick = () => {
               if (this.dataset.saved) delete this.dataset.saved;
               else this.dataset.saved = '1';

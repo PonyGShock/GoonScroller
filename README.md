@@ -17,9 +17,11 @@ has focus.
   - flips through all images of a gallery first,
   - pauses while your mouse is on the page, and carries on when the mouse leaves,
   - lets a video play through once before moving on (up to 30s, 1, 2 or 5 minutes, or the whole video),
+    including redgifs videos embedded in Reddit posts,
   - loads more posts when the feed runs out, and goes to the next page on old.reddit.
-- **Upvote / like** and **save / bookmark** the post you're on, with a hotkey. On new Reddit, Save is
-  in the post's "…" menu; GoonScroller opens it and clicks Save for you.
+- **Upvote / like** and **save / bookmark** the post you're on, with a hotkey. On Reddit, saving
+  goes straight through Reddit's own save function with your login (no menu needed); the "…" menu
+  is only a fallback.
 - **Open / close picture**: opens the current post's picture in the site's full-screen viewer, or
   closes the viewer. Next/previous image work inside it.
 - **Autoplay videos**: starts the video in the post you land on (X often won't by itself) and
@@ -28,7 +30,8 @@ has focus.
 - A **small indicator** in the bottom-right corner with the auto-scroll countdown. You can turn it off.
 - Pages with no posts to snap to, such as X's media grid, scroll one screen at a time.
 
-It only runs on `reddit.com` (including old.reddit) and `x.com` / `twitter.com`.
+It only runs on `reddit.com` (including old.reddit) and `x.com` / `twitter.com`, plus a tiny helper
+inside redgifs embeds so it can see and start those videos.
 
 ## Install (Chrome, Edge, Brave, Opera, Vivaldi)
 
