@@ -222,8 +222,16 @@
     el.dispatchEvent(new MouseEvent('click', at));
   }
 
+  // X (and Reddit) start ignoring or undoing save/like when it's toggled many times quickly, so a
+  // second press on the same post within a short time is dropped.
+  const ACTION_COOLDOWN = 1500;
+  const lastAction = {};
+
   async function postAction(kind) {
     const post = currentPost();
+    const last = lastAction[kind];
+    if (post && last?.post === post && Date.now() - last.at < ACTION_COOLDOWN) return hud.toast('Wait a moment…');
+    lastAction[kind] = { post, at: Date.now() };
     const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
     if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'Could not save this post');
     if (control.message) return hud.toast(control.message);

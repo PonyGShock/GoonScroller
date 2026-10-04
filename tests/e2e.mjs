@@ -378,14 +378,17 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await cmd('upvote');
   assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'true');
   assert.equal(await page.evaluate(() => document.querySelector('#p0').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'false');
+  await cmd('upvote'); // too soon after the last press on this post: ignored
+  assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'true');
+  await wait(1600);
   await cmd('upvote');
   assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'false');
-  await cmd('upvote');
 
   // Logged in: saved through Reddit's API, no menu involved.
   await cmd('save');
   await wait(500);
   assert.deepEqual([...redditApi.saved], ['t3_p2']);
+  await wait(1100);
   await cmd('save'); // again: unsave
   await wait(500);
   assert.deepEqual([...redditApi.saved], []);
@@ -414,6 +417,7 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await cmd('save');
   await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
+  await wait(800);
   await cmd('save');
   await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
@@ -656,8 +660,15 @@ await test('x: like and bookmark the current tweet', async () => {
   assert.equal(await page.locator(`#${current} [data-testid="unlike"]`).count(), 1);
   assert.equal(await page.locator(`#${current} [data-testid="removeBookmark"]`).count(), 1);
   assert.equal(await page.locator('[data-testid="unlike"]').count(), 1);
+  await wait(1600); // presses on the same post within 1.5s are ignored
   await cmd('upvote');
   assert.equal(await page.locator('[data-testid="unlike"]').count(), 0);
+  await wait(1600);
+  await cmd('upvote');
+  await cmd('upvote'); // spammed: only the first one counts
+  assert.equal(await page.locator('[data-testid="unlike"]').count(), 1);
+  await wait(1600);
+  await cmd('upvote');
 });
 
 // ---------------------------------------------------------------- old Reddit

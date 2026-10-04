@@ -178,6 +178,9 @@ fix them, but most have a workaround.
   opens the post's page), so GoonScroller shows a message instead and auto-scroll leaves it in the feed.
 - **Only Reddit's own videos, X videos and redgifs embeds are waited for.** Other embedded players
   (for example YouTube) are shown, but auto-scroll can't see how long they are.
+- **X (and Reddit) limit how fast you can save/like the same post.** Toggling it many times quickly
+  makes the site ignore or undo it. GoonScroller ignores a second press on the same post within 1.5
+  seconds to avoid that, but the site's own limit can still kick in.
 - **If Reddit or X change their page layout**, post detection or buttons may stop working until the
   extension is updated. The selectors are at the top of `src/content.js`.
 
