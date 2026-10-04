@@ -361,7 +361,7 @@
       videoExtended = true;
       return startCountdown(wait, 'Waiting for video…');
     }
-    if (settings.flipGalleries && flipImage(1)) return startCountdown();
+    if (settings.flipGalleries && (await flipImage(1))) return startCountdown();
     await navigate(1);
     startCountdown();
   }
@@ -424,28 +424,58 @@
     return (posts.findLast((p) => p.rect.top <= anchor) ?? posts[0]).el;
   }
 
-  // The gallery arrow in the open image viewer or the current post, if there is a next/previous image.
-  function imageButton(dir) {
+  // Gallery arrows in the open image viewer or the current post, visible ones first. Sites often
+  // only show these while the mouse hovers the image, so hidden ones count too (with the mouse in
+  // a game they are never visible).
+  function imageButtons(dir) {
     const scope = document.querySelector('[role="dialog"][aria-modal="true"]') ?? currentPost();
-    if (!scope) return null;
+    if (!scope) return { scope: null, buttons: [] };
     const want = dir > 0 ? NEXT_IMAGE : PREV_IMAGE;
     const other = dir > 0 ? PREV_IMAGE : NEXT_IMAGE;
-    return deepQueryAll(scope, 'button, [role="button"]').find((b) => {
+    const buttons = deepQueryAll(scope, 'button, [role="button"]').filter((b) => {
       const label = [b.getAttribute('aria-label'), b.title, b.getAttribute('slot'), b.parentElement?.getAttribute('slot')]
         .filter(Boolean)
         .join(' ');
       if (!want.test(label) || other.test(label) || /post|comment|reply|repl/i.test(label)) return false;
-      if (b.disabled || b.getAttribute('aria-disabled') === 'true') return false;
-      const r = b.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && b.checkVisibility({ visibilityProperty: true });
-    }) ?? null;
+      return !b.disabled && b.getAttribute('aria-disabled') !== 'true';
+    });
+    const visible = (b) => b.getBoundingClientRect().width > 0 && b.checkVisibility({ visibilityProperty: true });
+    buttons.sort((a, b) => visible(b) - visible(a));
+    return { scope, buttons };
   }
 
-  function flipImage(dir) {
-    const button = imageButton(dir);
-    if (!button) return false;
-    button.click();
-    return true;
+  // Clicks the gallery arrow and reports whether the gallery actually moved. A hidden arrow can
+  // still be there on the last/first image, so "clicked" alone doesn't mean anything happened.
+  async function flipImage(dir) {
+    const { scope, buttons } = imageButtons(dir);
+    if (!buttons.length) return false;
+    const changed = watchForChange(scope);
+    buttons[0].click();
+    return changed(400);
+  }
+
+  // Resolves true as soon as anything inside `root` (shadow roots included) changes or scrolls.
+  function watchForChange(root) {
+    let hit = false;
+    const observers = [];
+    const mark = () => (hit = true);
+    for (const node of [root, ...deepQueryAll(root, '*').filter((el) => el.shadowRoot).map((el) => el.shadowRoot)]) {
+      const mo = new MutationObserver(mark);
+      mo.observe(node, { attributes: true, childList: true, subtree: true, characterData: true });
+      observers.push(mo);
+    }
+    const onScroll = (e) => e.composedPath().includes(root) && mark();
+    document.addEventListener('scroll', onScroll, true);
+    return async (ms) => {
+      const until = Date.now() + ms;
+      while (!hit && Date.now() < until) await sleep(50);
+      for (const mo of observers) {
+        if (mo.takeRecords().length) hit = true;
+        mo.disconnect();
+      }
+      document.removeEventListener('scroll', onScroll, true);
+      return hit;
+    };
   }
 
   function deepQueryAll(root, selector, out = []) {
@@ -478,12 +508,12 @@
       }
       case 'next-image':
         // Last image (or no gallery): carry on to the next post so one key does both.
-        if (!flipImage(1)) navigate(1);
+        flipImage(1).then((moved) => moved || navigate(1));
         if (auto) startCountdown();
         break;
       case 'previous-image':
         // First image (or no gallery): back to the previous post, mirroring next-image.
-        if (!flipImage(-1)) navigate(-1);
+        flipImage(-1).then((moved) => moved || navigate(-1));
         if (auto) startCountdown();
         break;
       case 'toggle-media-only':

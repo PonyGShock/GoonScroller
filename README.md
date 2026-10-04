@@ -26,8 +26,6 @@ It only runs on `reddit.com` (including old.reddit) and `x.com` / `twitter.com`.
 
 ## Install (Chrome, Edge, Brave, Opera, Vivaldi)
 
-Using Firefox? See [Firefox](#firefox) below.
-
 1. Download this repo (**Code → Download ZIP**, then unzip) or `git clone` it.
 2. Open `chrome://extensions` (in Edge: `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the unzipped **GoonScroller** folder: the one that has
@@ -120,36 +118,6 @@ your account. Otherwise every post waits for a click.
 - If Reddit or X change their page layout and posts stop being detected, look at the selectors
   at the top of `src/content.js`.
 - On Linux under Wayland, global hotkeys may not work, depending on your desktop.
-
-## Firefox
-
-The extension also runs in Firefox (140 or newer): next/previous, auto-scroll, images-only and
-all the settings work. **Except global hotkeys**: Firefox has no way for an extension to catch
-keys while another app (your game) has focus. In Firefox the hotkeys only work while Firefox
-itself is focused.
-
-What that means in practice:
-
-- **Auto-scroll is fine.** Click ▶ Auto in the panel once and leave it running; it doesn't need
-  any keys after that.
-- **For hotkeys from inside a game**, install Microsoft Edge (already on Windows) or Brave
-  next to Firefox and use it only for this on your second monitor. Keep Firefox for everything else.
-
-Installing in Firefox:
-
-- **Quick test:** open `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** →
-  pick `manifest.json`. It's removed when Firefox restarts.
-- **To keep it:** regular Firefox only installs signed add-ons. Signing is free: make an account on
-  [addons.mozilla.org](https://addons.mozilla.org/developers/), zip the *contents* of the
-  GoonScroller folder, submit it as **"On your own"** (unlisted), and install the signed `.xpi` it
-  gives you back. Or use Firefox Developer Edition / Nightly and set
-  `xpinstall.signatures.required` to `false` in `about:config`.
-- Firefox may ask you to allow access to reddit.com and x.com. Allow it (or right-click the icon
-  → Manage Extension → Permissions), otherwise nothing happens on those sites.
-- If the toolbar panel shows up tiny or empty, open the settings as a page instead: about:addons →
-  GoonScroller → **Preferences**. If it still fails, open `about:debugging#/runtime/this-firefox`,
-  click **Inspect** next to GoonScroller and send a screenshot of the Console errors.
-- Change hotkeys via **Change hotkeys…** in the panel (or about:addons → ⚙ → Manage Extension Shortcuts).
 
 ## Development
 

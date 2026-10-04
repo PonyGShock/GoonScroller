@@ -22,11 +22,7 @@
     "open_in_tab": true
   },
   "background": {
-    "service_worker": "src/background.js",
-    "scripts": [
-      "src/shared.js",
-      "src/background.js"
-    ]
+    "service_worker": "src/background.js"
   },
   "permissions": [
     "storage",
@@ -102,17 +98,6 @@
     },
     "_execute_action": {
       "description": "Open the GoonScroller panel"
-    }
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "goonscroller@ponygshock",
-      "strict_min_version": "140.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
     }
   }
 }

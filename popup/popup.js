@@ -126,10 +126,7 @@ async function init() {
     };
     savePageKeys();
   });
-  $('editKeys').addEventListener('click', () => {
-    if (chrome.commands.openShortcutSettings) chrome.commands.openShortcutSettings(); // Firefox
-    else chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-  });
+  $('editKeys').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
 
   renderShortcuts().catch(() => {});
   render(await send(null));

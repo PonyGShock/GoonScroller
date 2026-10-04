@@ -196,6 +196,8 @@ await test('reddit: auto mode lets a playing video finish', async () => {
 await test('reddit: next-image clicks through a gallery, then moves to the next post', async () => {
   await setSettings({ smooth: false, delay: 6 });
   await open('https://www.reddit.com/r/test/');
+  await page.mouse.move(1275, 795); // away from the gallery: arrows stay hidden, like when you're in a game
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('#p2 gallery-carousel').shadowRoot.querySelector('button')).visibility), 'hidden');
   await cmd('next-post');
   await cmd('next-post'); // p2 is a 3-image gallery
   await wait(700);
