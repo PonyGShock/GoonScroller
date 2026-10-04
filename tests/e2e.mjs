@@ -228,6 +228,17 @@ await test('reddit: auto mode flips through gallery images before moving on', as
   await cmd('toggle-auto');
 });
 
+await test('shortcut text from the shortcuts page is understood', async () => {
+  const parsed = await sw.evaluate(() => {
+    const { parseShortcut: p } = globalThis.GoonShared;
+    return ['Ctrl+Shift+Down Arrow', 'Ctrl+Shift+Right', 'Alt+K', 'Ctrl+Shift+2', 'Ctrl+Comma', 'Ctrl+Shift+Page Down', 'Command+Shift+8']
+      .map((s) => p(s));
+  });
+  assert.deepEqual(parsed.map((s) => s.key ?? s.code), ['ArrowDown', 'ArrowRight', 'KeyK', 'Digit2', ',', 'PageDown', 'Digit8']);
+  assert.equal(parsed[0].ctrl && parsed[0].shift && !parsed[0].alt, true);
+  assert.equal(parsed[6].meta, true);
+});
+
 await test('reddit: pressing Ctrl+Shift+2 / Ctrl+Shift+1 in the page works', async () => {
   await setSettings({ smooth: false });
   await open('https://www.reddit.com/r/test/');

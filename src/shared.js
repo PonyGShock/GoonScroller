@@ -18,6 +18,44 @@ globalThis.GoonShared = {
     return seconds >= 120 && seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds}s`;
   },
 
+  // Turns a shortcut as the browser shows it ("Ctrl+Shift+Down Arrow", "Alt+K", "Ctrl+Comma")
+  // into something a keydown event can be matched against. Returns null if it can't be read.
+  parseShortcut(text) {
+    if (!text) return null;
+    const parts = text.split('+').map((p) => p.trim()).filter(Boolean);
+    const spec = { ctrl: false, alt: false, shift: false, meta: false, key: null };
+    for (const part of parts.slice(0, -1)) {
+      const mod = part.toLowerCase();
+      if (mod === 'ctrl' || mod === 'macctrl' || mod === 'control' || mod === '⌃') spec.ctrl = true;
+      else if (mod === 'alt' || mod === 'option' || mod === '⌥') spec.alt = true;
+      else if (mod === 'shift' || mod === '⇧') spec.shift = true;
+      else if (mod === 'command' || mod === 'cmd' || mod === 'search' || mod === '⌘') spec.meta = true;
+      else return null;
+    }
+    const raw = parts.at(-1)?.toLowerCase().replace(/\s*arrow\s*/, '').replace(/\s+/g, '');
+    const NAMED = {
+      up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
+      comma: ',', ',': ',', period: '.', '.': '.', space: ' ', home: 'Home', end: 'End',
+      pageup: 'PageUp', pgup: 'PageUp', pagedown: 'PageDown', pgdn: 'PageDown',
+      insert: 'Insert', ins: 'Insert', delete: 'Delete', del: 'Delete', tab: 'Tab',
+    };
+    if (!raw) return null;
+    if (NAMED[raw]) spec.key = NAMED[raw];
+    else if (/^[a-z]$/.test(raw)) spec.code = `Key${raw.toUpperCase()}`;
+    else if (/^[0-9]$/.test(raw)) spec.code = `Digit${raw}`;
+    else if (/^f([1-9]|1[0-9]|2[0-4])$/.test(raw)) spec.key = raw.toUpperCase();
+    else return null;
+    return spec;
+  },
+
+  matchesShortcut(spec, e) {
+    if (!spec || e.ctrlKey !== spec.ctrl || e.altKey !== spec.alt || e.shiftKey !== spec.shift || e.metaKey !== spec.meta) {
+      return false;
+    }
+    if (spec.code) return e.code === spec.code || (spec.code.startsWith('Digit') && e.code === `Numpad${spec.code.slice(5)}`);
+    return e.key === spec.key;
+  },
+
   nearestStep(seconds) {
     const steps = globalThis.GoonShared.DELAY_STEPS;
     let best = 0;

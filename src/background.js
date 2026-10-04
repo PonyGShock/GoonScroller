@@ -54,6 +54,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.on) chrome.action.setBadgeBackgroundColor({ tabId, color: '#ff4f6d' }).catch(() => {});
     return;
   }
+  if (msg?.type === 'get-shortcuts') {
+    chrome.commands.getAll().then(
+      (cmds) => sendResponse(cmds.filter((c) => c.shortcut && c.name !== '_execute_action')),
+      () => sendResponse(null),
+    );
+    return true;
+  }
   if (msg?.type === 'popup' && typeof msg.tabId === 'number') {
     const message = msg.command ? { type: 'command', command: msg.command } : { type: 'get-state' };
     sendToTab(msg.tabId, message).then(sendResponse, () => sendResponse(null));

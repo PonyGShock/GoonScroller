@@ -285,10 +285,30 @@
   listen(window, 'touchstart', onUserScroll, { passive: true, capture: true });
   // Backup for when the browser didn't register the hotkeys (it then passes them to the page).
   // Only works while the browser has focus; registered hotkeys never reach the page.
-  const FALLBACK_KEYS = { Digit1: 'previous-post', Digit2: 'next-post', Digit3: 'toggle-auto', Digit4: 'next-image' };
+  // Uses whatever keys are set on the browser's shortcuts page (re-read whenever the tab gets focus).
+  const { parseShortcut, matchesShortcut } = globalThis.GoonShared;
+  let pageShortcuts = Object.entries({
+    'previous-post': 'Ctrl+Shift+1',
+    'next-post': 'Ctrl+Shift+2',
+    'toggle-auto': 'Ctrl+Shift+3',
+    'next-image': 'Ctrl+Shift+4',
+  }).map(([name, text]) => ({ name, spec: parseShortcut(text) }));
+
+  function loadShortcuts() {
+    try {
+      chrome.runtime.sendMessage({ type: 'get-shortcuts' }).then((list) => {
+        if (!Array.isArray(list)) return;
+        pageShortcuts = list.map((c) => ({ name: c.name, spec: parseShortcut(c.shortcut) })).filter((c) => c.spec);
+      }, () => {});
+    } catch {}
+  }
+  loadShortcuts();
+  listen(window, 'focus', loadShortcuts);
+  listen(document, 'visibilitychange', () => document.hidden || loadShortcuts());
+
   listen(window, 'keydown', (e) => {
-    const command = e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && FALLBACK_KEYS[e.code];
-    if (!command || e.repeat) return;
+    const command = !e.repeat && pageShortcuts.find((c) => matchesShortcut(c.spec, e))?.name;
+    if (!command) return;
     e.preventDefault();
     e.stopPropagation();
     ready.then(() => run(command));
