@@ -345,6 +345,9 @@
   function scrollToPost(post, anchor) {
     const token = ++navToken;
     pauseStartedVideos();
+    if (cursor?.isConnected && cursor !== post.el) tellFrames(cursor, 'pause'); // embeds keep playing otherwise
+    lastVideoTime = 0;
+    videoDueAt = 0;
     cursor = post.el;
     const top = clamp(post.top - anchor, 0, Math.max(0, maxScroll()));
     const smooth = settings.smooth && Math.abs(top - scrollY) > 1;
@@ -404,6 +407,8 @@
   }
 
   let startedFramePosts = [];
+  let lastVideoTime = 0; // video position at the previous check, to notice a loop restarting
+  let videoDueAt = 0; // when the current post's video should have played through
 
   async function autoplay(post, token) {
     if (!settings.autoplayVideos) return;
@@ -641,10 +646,14 @@
       return elapsed < 8000 ? { ms: 1000, label: 'Waiting for video…' } : null;
     }
     if (video.ended) return null;
+    // Feed videos loop, so "finished" means: it jumped back to the start, or the time it was due
+    // to end has passed (a restart can happen between two checks without being seen).
+    const wrapped = video.currentTime + 0.5 < lastVideoTime;
+    lastVideoTime = video.currentTime;
+    if (wrapped || (videoDueAt && Date.now() >= videoDueAt - 250)) return null;
     const rate = video.playbackRate || 1;
-    const remaining = video.loop
-      ? video.duration * 1000 - elapsed
-      : ((video.duration - video.currentTime) * 1000) / rate;
+    const remaining = ((video.duration - video.currentTime) * 1000) / rate;
+    videoDueAt = Date.now() + remaining;
     const ms = Math.min(remaining + 200, left);
     if (ms <= 300) return null;
     const secs = Math.ceil(ms / 1000);
@@ -656,14 +665,26 @@
   // The post being looked at: the one we scrolled to if it's still on screen, otherwise the one
   // at the anchor line.
   function currentPost() {
+    const all = site ? [...site.posts()] : [];
+    const ref = cursor?.isConnected ? cursor : all[0];
+    if (!ref) return null;
+    const anchor = anchorAt(ref.getBoundingClientRect());
     if (cursor?.isConnected) {
       const r = cursor.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < innerHeight) return cursor;
+      if (inFlight || Math.abs(r.top - anchor) <= SNAP) return cursor; // still where we put it
     }
-    const posts = collectPosts();
-    if (!posts.length) return null;
-    const anchor = anchorAt(posts[0].rect) + TOL;
-    return (posts.findLast((p) => p.rect.top <= anchor) ?? posts[0]).el;
+    // Scrolled by hand: the post taking up most of the screen below the header.
+    let best = null;
+    let most = 0;
+    for (const el of all) {
+      const r = el.getBoundingClientRect();
+      const seen = Math.min(r.bottom, innerHeight) - Math.max(r.top, anchor);
+      if (seen > most) {
+        most = seen;
+        best = el;
+      }
+    }
+    return best ?? (cursor?.isConnected ? cursor : null);
   }
 
   // Gallery arrows in the open image viewer or the current post, visible ones first. Sites often

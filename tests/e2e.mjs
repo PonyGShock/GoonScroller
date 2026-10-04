@@ -386,6 +386,20 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await cmd('save'); // again: unsave
   await wait(500);
   assert.deepEqual([...redditApi.saved], []);
+
+  // Scrolled back up by hand (the post we were on still peeks in at the bottom): save the post
+  // that takes up most of the screen, not the one below.
+  await page.evaluate(() => scrollBy(0, document.querySelector('#p2').getBoundingClientRect().top - (innerHeight - 80)));
+  await wait(300);
+  const mostVisible = await page.evaluate(() =>
+    [...document.querySelectorAll('shreddit-post')]
+      .map((el) => [el.id, Math.min(el.getBoundingClientRect().bottom, innerHeight) - Math.max(el.getBoundingClientRect().top, 61)])
+      .sort((a, b) => b[1] - a[1])[0][0]);
+  assert.notEqual(mostVisible, 'p2');
+  await cmd('save');
+  await wait(500);
+  assert.deepEqual([...redditApi.saved], [`t3_${mostVisible}`]);
+  redditApi.saved.clear();
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null, 'menu should not have been used');
 
   // API not available: falls back to the "…" menu, found by icon names (labels are Dutch here).
@@ -483,6 +497,23 @@ await test('reddit: redgifs embeds count as videos: started, and waited for', as
   await cmd('toggle-auto');
   assert.equal(wasPlaying, true, 'redgifs video should have been started');
   assert.ok(stayed >= duration - 0.3 && stayed < duration + 2.5, `stayed ${stayed}s for a ${duration}s redgifs clip`);
+
+  // Already playing partway through when we arrive: only the rest is waited for.
+  await cmd('previous-post'); // back to p2
+  await wait(600);
+  await frame.evaluate(() => { v.currentTime = v.duration - 1.5; return v.play(); }); // as if the site started it
+  await cmd('toggle-auto');
+  let arrived2 = 0;
+  for (let i = 0; i < 200; i++) {
+    const at = await postAt('shreddit-post', 61);
+    if (at === 'p2' && !arrived2) arrived2 = Date.now();
+    if (arrived2 && at !== 'p2') break;
+    await wait(100);
+  }
+  const stayed2 = (Date.now() - arrived2) / 1000;
+  await cmd('toggle-auto');
+  // The clip's position at arrival varies, but it must move on within one play-through, not loop forever.
+  assert.ok(stayed2 < duration + 2, `stayed ${stayed2}s for a ${duration}s clip that was already playing`);
   await wait(300);
   assert.equal(await frame.evaluate(() => v.paused), true, 'paused after moving on');
   await setSettings({ videoWait: 60, flipGalleries: true, delay: 6 });
