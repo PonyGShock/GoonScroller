@@ -127,13 +127,42 @@ your account. Otherwise every post waits for a click.
 - **X videos:** GoonScroller's **Autoplay videos** option starts them for you. X's own switch is
   under Settings → Accessibility, display, and languages → Data usage → **Autoplay**.
 
-## Good to know
+## Known limitations
 
-- Keep the browser window visible, for example on your second monitor. Chrome slows down timers in
-  minimized windows and background tabs, and auto-scroll waits while its tab is hidden.
-- If Reddit or X change their page layout and posts stop being detected, look at the selectors
-  at the top of `src/content.js`.
-- On Linux under Wayland, global hotkeys may not work, depending on your desktop.
+These come from how browsers, Windows, games or the sites themselves work. The extension can't
+fix them, but most have a workaround.
+
+**Hotkeys**
+
+- **Global hotkeys that overlap with your game's controls freeze your movement.** For example, with
+  `Ctrl+W/A/S/D` as global hotkeys, pressing Ctrl to crouch while walking hands those keys to the
+  scroller instead of the game. Windows takes a global hotkey before the game sees it, so the game
+  misses the key press or release and you stop moving for about a second.
+  *Workaround:* use combinations your game never uses, such as `Ctrl+Shift+1/2/3/4` or
+  `Ctrl+Shift+arrow keys`. Best of all, put them on spare mouse buttons through your mouse software.
+- **Global hotkeys always need Ctrl or Alt.** That's a browser rule. Plain keys (like the arrow
+  keys alone) only work as page keys, while the Reddit/X window is focused.
+- **Only 4 hotkeys come pre-set.** The browser doesn't allow more. Give the rest a key yourself on
+  the shortcuts page.
+- **After reinstalling or updating, check the Global setting again.** The browser sometimes switches
+  hotkeys back to "In Brave" / "In Chrome", so they stop working from other apps.
+- **Some games or anti-cheat programs block global hotkeys** while they're running. Use page keys or
+  mouse buttons there.
+- **On Linux under Wayland**, global hotkeys may not work, depending on your desktop.
+
+**Browser and sites**
+
+- **Chromium browsers only** (Chrome, Edge, Brave, Opera, Vivaldi). Firefox has no global hotkeys.
+- **Keep the browser window visible**, for example on your second monitor. Browsers slow down timers
+  in minimized windows and background tabs, and auto-scroll waits while its tab is hidden.
+- **Videos start muted until you've clicked the Reddit/X page once.** Browsers don't let pages play
+  sound on their own before that.
+- **After saving on Reddit, Reddit's own Save button may still say "Save"** until you refresh the
+  page. The post is saved; check your saved posts.
+- **Only Reddit's own videos, X videos and redgifs embeds are waited for.** Other embedded players
+  (for example YouTube) are shown, but auto-scroll can't see how long they are.
+- **If Reddit or X change their page layout**, post detection or buttons may stop working until the
+  extension is updated. The selectors are at the top of `src/content.js`.
 
 ## Development
 
