@@ -18,7 +18,6 @@ has focus.
   - pauses while your mouse is on the page, and carries on when the mouse leaves,
   - lets a playing video finish first (up to 30s),
   - loads more posts when the feed runs out, and goes to the next page on old.reddit.
-- **Upvote / like** and **save / bookmark** the post you're on, with a hotkey.
 - **Autoplay videos**: starts the video in the post you land on (X often won't by itself) and
   pauses it when you move on.
 - **Global hotkeys** that work while you're in a game.
@@ -49,8 +48,6 @@ Reddit/X tabs that are already open work straight away, without a reload.
 | Start / stop auto-scroll       | `Ctrl+Shift+3`  | `⌘⇧9` |
 | Shorter / longer auto delay    | not set         |       |
 | Toggle "images & videos only"  | not set         |       |
-| Upvote (Reddit) / like (X)     | not set         |       |
-| Save (Reddit) / bookmark (X)   | not set         |       |
 
 The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't the focused window.
 The ones marked "not set" can be given a key on the shortcuts page (below) or as a page key in the panel.

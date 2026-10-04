@@ -74,63 +74,6 @@
     },
   ];
 
-  // ------------------------------------------------------------------ upvote / like, save / bookmark
-
-  const labelOf = (el) => (el.getAttribute('aria-label') || el.textContent || '').trim();
-  const findIn = (root, selector, test) => deepQueryAll(root, selector).find(test) ?? null;
-  const BUTTONS = 'button, [role="button"], [role="menuitem"], a, li';
-  const SAVE_LABEL = /^(save|unsave|remove from saved|opslaan|niet meer opslaan|verwijderen uit opgeslagen)$/i;
-  const SAVED_LABEL = /unsave|remove|niet meer|verwijderen/i;
-
-  // Each returns { el, on } for the post: the control to click and whether it's already active.
-  const ACTIONS = {
-    X: {
-      upvote: (post) => {
-        const el = post.querySelector('[data-testid="like"], [data-testid="unlike"]');
-        return el && { el, on: el.dataset.testid === 'unlike', words: ['Liked', 'Like removed'] };
-      },
-      save: (post) => {
-        const el = post.querySelector('[data-testid="bookmark"], [data-testid="removeBookmark"]');
-        return el && { el, on: el.dataset.testid === 'removeBookmark', words: ['Bookmarked', 'Bookmark removed'] };
-      },
-    },
-    Reddit: {
-      upvote: (post) => {
-        const words = ['Upvoted', 'Upvote removed'];
-        const old = post.querySelector('.midcol .arrow.up, .midcol .arrow.upmod');
-        if (old) return { el: old, on: old.classList.contains('upmod'), words };
-        const el = findIn(post, 'button', (b) => b.hasAttribute('upvote') || /^(upvote|stem omhoog)/i.test(b.getAttribute('aria-label') || ''));
-        return el && { el, on: el.getAttribute('aria-pressed') === 'true', words };
-      },
-      save: async (post) => {
-        const words = ['Saved', 'Unsaved'];
-        const old = post.querySelector('.save-button a, a.save-button');
-        if (old) return { el: old, on: /unsave/i.test(old.textContent), words };
-        // New Reddit keeps "Save" in the post's "…" menu, which may need opening first.
-        const find = (root) => findIn(root, BUTTONS, (b) => SAVE_LABEL.test(labelOf(b)));
-        let el = find(post);
-        if (!el) {
-          const menu = findIn(post, 'button', (b) => /overflow|more options|meer opties|open user actions/i.test(b.getAttribute('aria-label') || ''));
-          if (!menu) return null;
-          menu.click();
-          for (let i = 0; i < 10 && !el; i++) {
-            await sleep(100);
-            el = find(post) ?? find(document);
-          }
-        }
-        return el && { el, on: SAVED_LABEL.test(labelOf(el)), words };
-      },
-    },
-  };
-
-  async function postAction(kind) {
-    const post = currentPost();
-    const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
-    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'No save button found');
-    control.el.click();
-    hud.toast(control.on ? control.words[1] : control.words[0]);
-  }
-
   const site = SITES.find((s) => s.host.test(location.hostname)) ?? null;
 
   // ------------------------------------------------------------------ state
@@ -276,6 +219,7 @@
 
   // ------------------------------------------------------------------ autoplay
 
+  const findIn = (root, selector, test) => deepQueryAll(root, selector).find(test) ?? null;
   let startedVideos = [];
   const PLAY_BUTTON = /^(play|play video|afspelen|video afspelen)$/i;
 
@@ -633,10 +577,6 @@
         // First image (or no gallery): back to the previous post, mirroring next-image.
         flipImage(-1).then((moved) => moved || (openViewer() ? hud.toast('First image') : navigate(-1)));
         if (auto) startCountdown();
-        break;
-      case 'upvote':
-      case 'save':
-        postAction(command);
         break;
       case 'toggle-media-only':
         saveSetting({ mediaOnly: !settings.mediaOnly });

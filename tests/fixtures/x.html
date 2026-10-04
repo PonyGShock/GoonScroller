@@ -48,7 +48,7 @@
               media ? `<div data-testid="tweetPhoto" style="height:${h - 80}px"></div>` : ''
             }${n === 2 ? '<video src="https://media.test/clip.webm" preload="auto" style="height:40px"></video>' : ''}${
               n === 3 ? '<div data-testid="videoPlayer"><button data-testid="playButton" aria-label="Play">▶</button></div>' : ''
-            }<button data-testid="like">♥</button><button data-testid="bookmark">🔖</button></article>`;
+            }</article>`;
           }
           list.append(cell);
           y += h;
@@ -63,9 +63,6 @@
           v.play();
           return;
         }
-        const b = e.target.closest?.('button[data-testid]');
-        const swap = { like: 'unlike', unlike: 'like', bookmark: 'removeBookmark', removeBookmark: 'bookmark' };
-        if (b && swap[b.dataset.testid]) b.dataset.testid = swap[b.dataset.testid];
       });
       add(20);
       addEventListener('scroll', () => {

@@ -20,8 +20,6 @@ globalThis.GoonShared = {
     ['next-image', 'Next image'],
     ['previous-image', 'Previous image'],
     ['toggle-auto', 'Start / stop auto'],
-    ['upvote', 'Upvote / like'],
-    ['save', 'Save / bookmark'],
   ],
 
   formatKey(spec) {

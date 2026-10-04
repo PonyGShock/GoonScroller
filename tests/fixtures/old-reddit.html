@@ -24,17 +24,9 @@
         t.id = `pg${page}-${i}`;
         t.className = 'thing link' + (i === 3 && page === 1 ? ' promoted' : '');
         t.dataset.domain = i === 1 ? 'self.test' : 'i.redd.it';
-        t.innerHTML = `<div class="midcol"><div class="arrow up"></div></div>page ${page} post ${i}
-          <ul><li class="link-save-button save-button"><a href="#">save</a></li></ul>`;
+        t.textContent = `page ${page} post ${i}`;
         siteTable.append(t, Object.assign(document.createElement('div'), { className: 'clearleft' }));
       }
-      document.addEventListener('click', (e) => {
-        if (e.target.matches('.arrow')) e.target.className = e.target.classList.contains('up') ? 'arrow upmod' : 'arrow up';
-        if (e.target.matches('.save-button a')) {
-          e.preventDefault();
-          e.target.textContent = e.target.textContent === 'save' ? 'unsave' : 'save';
-        }
-      });
       if (page < 3) {
         document.querySelector('.nav-buttons').innerHTML = `<span class="next-button"><a href="?page=${page + 1}">next ›</a></span>`;
       }

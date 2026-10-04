@@ -329,26 +329,6 @@ await test('reddit: gallery hotkeys work inside the full-screen image viewer', a
   await setSettings({ pageKeys: {} });
 });
 
-await test('reddit: upvote and save (via the "…" menu) the current post', async () => {
-  await setSettings({ smooth: false });
-  await open('https://www.reddit.com/r/test/');
-  await cmd('next-post');
-  await cmd('next-post'); // p2
-  await wait(600);
-  await cmd('upvote');
-  assert.equal(await page.getAttribute('#p2 button[upvote]', 'aria-pressed'), 'true');
-  assert.equal(await page.getAttribute('#p0 button[upvote]', 'aria-pressed'), 'false');
-  await cmd('upvote');
-  assert.equal(await page.getAttribute('#p2 button[upvote]', 'aria-pressed'), 'false');
-  await cmd('upvote');
-  await cmd('save');
-  await wait(300);
-  assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
-  await cmd('save');
-  await wait(300);
-  assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
-});
-
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {
@@ -388,27 +368,11 @@ await test('x: videos start when the scroller lands on them and pause when it mo
   await wait(800);
 });
 
-await test('x: like and bookmark the current tweet', async () => {
-  await cmd('upvote');
-  await cmd('save');
-  const current = await postAt('article', 54);
-  assert.equal(await page.locator(`#${current} [data-testid="unlike"]`).count(), 1);
-  assert.equal(await page.locator(`#${current} [data-testid="removeBookmark"]`).count(), 1);
-  assert.equal(await page.locator('[data-testid="unlike"]').count(), 1);
-  await cmd('upvote');
-  assert.equal(await page.locator('[data-testid="unlike"]').count(), 0);
-});
-
 // ---------------------------------------------------------------- old Reddit
 
 await test('old reddit: walks the listing, skips self/promoted posts, then opens the next page', async () => {
   await open('https://old.reddit.com/r/test/');
   await expectSequence('.thing', 4, ['pg1-0', 'pg1-2']);
-  await cmd('upvote');
-  await cmd('save');
-  assert.equal(await page.locator('#pg1-2 .arrow.upmod').count(), 1);
-  assert.equal(await page.textContent('#pg1-2 .save-button a'), 'unsave');
-  assert.equal(await page.locator('.arrow.upmod').count(), 1);
   await cmd('next-post'); // pg1-4 can't reach the top (end of page)
   await wait(500);
   await cmd('next-post');

@@ -84,14 +84,6 @@
       "description": "Start / stop auto-scroll",
       "global": true
     },
-    "upvote": {
-      "description": "Upvote (Reddit) / like (X) the current post",
-      "global": true
-    },
-    "save": {
-      "description": "Save (Reddit) / bookmark (X) the current post",
-      "global": true
-    },
     "faster": {
       "description": "Auto-scroll: shorter delay",
       "global": true
