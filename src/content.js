@@ -113,7 +113,8 @@
           (await saveViaMenu(post).catch((e) => (note(`menu error: ${e?.message || e}`), null)));
         note(message ? `result: ${message}` : 'result: not saved');
         notify({ type: 'save-report', lines: saveReport, at: Date.now() });
-        return message ? { message } : null;
+        unsaveOffer = message === ALREADY ? { id: postFullname(post), at: Date.now() } : null;
+        return message ? { message, changed: message !== ALREADY } : null;
       },
     },
   };
@@ -240,7 +241,8 @@
       const why = site?.name === 'Reddit' ? " · details in the GoonScroller panel" : '';
       return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : `Couldn't save this post${why}`);
     }
-    lastAction[kind] = { post, at: Date.now() }; // only a press that did something starts the cooldown
+    // Only a press that changed something starts the cooldown.
+    if (control.changed !== false) lastAction[kind] = { post, at: Date.now() };
     if (control.message) return hud.toast(control.message);
     realClick(control.el);
     hud.toast(control.on ? control.words[1] : control.words[0]);
@@ -264,12 +266,28 @@
     return `<${el.localName}${attrs ? ` ${attrs}` : ''}>${text ? ` "${text}"` : ''}`;
   };
 
+  // The save key only saves: on an already-saved post it says so and leaves it alone (Reddit's
+  // own Save button doesn't update until a refresh, so a second press would otherwise silently
+  // unsave). Pressing it again within a few seconds does unsave.
+  const ALREADY = 'Already saved ✓ · press again to unsave';
+  let unsaveOffer = null; // { id, at } after an "Already saved"
+  const unsaveAllowed = (id) => unsaveOffer?.id === id && Date.now() - unsaveOffer.at < 4000;
+  const alreadySaved = (how) => {
+    note(`${how}: already saved, left as it is`);
+    return ALREADY;
+  };
+
   let modhash = null;
-  async function redditApiSave(post) {
+  // Reddit's id for a post ("t3_abc123").
+  function postFullname(post) {
     const raw = [post.getAttribute('id'), post.getAttribute('post-id'), post.getAttribute('thingid'), post.dataset.fullname]
       .find((v) => /^(t3_)?[a-z0-9]+$/i.test(v || ''));
-    if (!raw) return null;
-    const id = raw.startsWith('t3_') ? raw : `t3_${raw}`;
+    return raw ? (raw.startsWith('t3_') ? raw : `t3_${raw}`) : null;
+  }
+
+  async function redditApiSave(post) {
+    const id = postFullname(post);
+    if (!id) return null;
     return (await legacySave(id).catch(() => null)) ?? (await oauthSave(id).catch(() => null));
   }
 
@@ -287,6 +305,7 @@
       note("old login: couldn't read the post's saved state");
       return null;
     }
+    if (before && !unsaveAllowed(id)) return alreadySaved('old login');
     const res = await fetch(before ? '/api/unsave' : '/api/save', {
       method: 'POST',
       credentials: 'include',
@@ -317,6 +336,7 @@
       note(`new login: reading the post failed (${info?.status ?? 'no answer'})`);
       return null;
     }
+    if (before && !unsaveAllowed(id)) return alreadySaved('new login');
     const res = await call('POST', before ? '/api/unsave' : '/api/save', `id=${encodeURIComponent(id)}`);
     if (!res?.ok) {
       note(`new login: save request failed (${res?.status ?? 'no answer'})`);
@@ -382,6 +402,10 @@
       }
     }
     const before = savedNow(el);
+    if (before && !unsaveAllowed(postFullname(post))) {
+      if (opener) realClick(opener); // close the menu again
+      return alreadySaved('menu');
+    }
     note(`menu: clicking ${describe(el)}`);
     realClick(el);
     await sleep(700);

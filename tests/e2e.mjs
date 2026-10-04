@@ -408,8 +408,12 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await cmd('save');
   await wait(500);
   assert.deepEqual([...redditApi.saved], ['t3_p2']);
-  await wait(1100);
-  await cmd('save'); // again: unsave
+  await wait(1600);
+  await cmd('save'); // again: already saved, so it's left alone (no silent unsave)
+  await wait(500);
+  assert.deepEqual([...redditApi.saved], ['t3_p2']);
+  assert.match(await sw.evaluate(async () => (await chrome.storage.session.get('lastSave')).lastSave.lines.join('\n')), /already saved, left as it is/);
+  await cmd('save'); // pressed again right away: unsave
   await wait(500);
   assert.deepEqual([...redditApi.saved], []);
 
@@ -456,7 +460,10 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
   await wait(1600); // cooldown after a save that worked
-  await cmd('save');
+  await cmd('save'); // already saved: left alone
+  await wait(2000);
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
+  await cmd('save'); // pressed again right away: unsave
   await wait(2000);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
   assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('ul').children.length), 0, 'menu closed');
