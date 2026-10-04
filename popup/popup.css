@@ -87,6 +87,46 @@ button:disabled {
   cursor: default;
 }
 
+.controls.images {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 8px;
+}
+
+.controls.images button {
+  height: 32px;
+}
+
+.keys {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.keys li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.keys button {
+  height: 24px;
+  min-width: 70px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font: 700 13px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.keys button.unset {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.keys button.recording {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 button.primary {
   background: var(--accent);
   border-color: var(--accent);

@@ -8,6 +8,24 @@ globalThis.GoonShared = {
     waitForVideos: true, // let a playing video finish before moving on (capped at 30s)
     flipGalleries: true, // auto mode clicks through gallery images before moving on
     hud: true, // small on-screen indicator in the corner
+    // Keys set in the panel that work on the page while the browser is focused, without Ctrl/Alt.
+    // { command: { code, ctrl, alt, shift, meta } }
+    pageKeys: {},
+  },
+
+  PAGE_KEY_ACTIONS: [
+    ['next-post', 'Next post'],
+    ['previous-post', 'Previous post'],
+    ['next-image', 'Next image'],
+    ['previous-image', 'Previous image'],
+    ['toggle-auto', 'Start / stop auto'],
+  ],
+
+  formatKey(spec) {
+    if (!spec?.code) return '';
+    const NAMES = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Space: 'Space', Escape: 'Esc' };
+    const key = NAMES[spec.code] ?? spec.code.replace(/^Key|^Digit/, '').replace(/^Numpad/, 'Num ');
+    return [spec.ctrl && 'Ctrl', spec.alt && 'Alt', spec.shift && 'Shift', spec.meta && 'Meta', key].filter(Boolean).join('+');
   },
 
   DELAY_STEPS: [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 30, 45, 60, 90, 120, 180, 300],

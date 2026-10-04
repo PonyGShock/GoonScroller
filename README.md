@@ -59,6 +59,20 @@ The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't t
 3. To use other keys, click the pencil and press a new combination. It has to include Ctrl or
    Alt. Pick something your game doesn't use.
 
+### Page keys: plain keys like the arrow keys
+
+The browser's hotkeys always need Ctrl or Alt. For single keys, use **Page keys** in the GoonScroller
+panel. Click an action and press any key, or click **Use arrow keys**:
+
+- ↓ / ↑ for next / previous post
+- → / ← for next / previous image in a gallery. On the last image → goes to the next post; on the
+  first image ← goes to the previous post.
+
+Page keys only work while the Reddit/X window is focused, and not while you're typing in a text box.
+They can't be global, because that would take those keys away from every other app and game.
+
+The panel also has **◀ Image / Image ▶** buttons for galleries.
+
 ### Hotkeys don't do anything?
 
 - Open the GoonScroller panel. If it says the hotkeys weren't assigned, or shows **not set**, click

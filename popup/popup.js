@@ -1,9 +1,60 @@
-const { DEFAULTS, DELAY_STEPS, nearestStep, formatDelay } = globalThis.GoonShared;
+const { DEFAULTS, DELAY_STEPS, PAGE_KEY_ACTIONS, nearestStep, formatDelay, formatKey } = globalThis.GoonShared;
 const $ = (id) => document.getElementById(id);
 
 const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
 
 let tabId = null;
+let pageKeys = {};
+let recording = null; // command whose key is being recorded
+
+const MODIFIER_CODES = /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$/;
+
+function renderPageKeys() {
+  $('pageKeys').replaceChildren(
+    ...PAGE_KEY_ACTIONS.map(([command, label]) => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      const button = document.createElement('button');
+      name.textContent = label;
+      button.dataset.command = command;
+      button.textContent = recording === command ? 'press a key…' : formatKey(pageKeys[command]) || 'set';
+      button.classList.toggle('unset', !pageKeys[command] && recording !== command);
+      button.classList.toggle('recording', recording === command);
+      button.addEventListener('click', () => {
+        recording = recording === command ? null : command;
+        renderPageKeys();
+      });
+      li.append(name, button);
+      return li;
+    }),
+  );
+}
+
+function savePageKeys() {
+  chrome.storage.sync.set({ pageKeys });
+  renderPageKeys();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!recording || MODIFIER_CODES.test(e.code)) return;
+  e.preventDefault();
+  if (e.code === 'Escape') {
+    recording = null;
+    return renderPageKeys();
+  }
+  if (e.code === 'Backspace' || e.code === 'Delete') {
+    delete pageKeys[recording];
+  } else {
+    const spec = { code: e.code, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey };
+    // One key per action: take it away from any other action that had it.
+    for (const [cmd, other] of Object.entries(pageKeys)) {
+      if (formatKey(other) === formatKey(spec)) delete pageKeys[cmd];
+    }
+    pageKeys[recording] = spec;
+  }
+  recording = null;
+  savePageKeys();
+});
 
 async function send(command) {
   if (tabId == null) return null;
@@ -15,7 +66,7 @@ function render(state) {
   $('site').textContent = ok ? state.site : 'Not on Reddit/X';
   $('site').classList.toggle('on', ok);
   $('unsupported').hidden = ok;
-  for (const id of ['prev', 'next', 'auto']) $(id).disabled = !ok;
+  for (const id of ['prev', 'next', 'auto', 'prevImage', 'nextImage']) $(id).disabled = !ok;
   $('auto').classList.toggle('on', !!state?.auto);
   $('auto').textContent = state?.auto ? '❚❚ Stop auto' : '▶ Auto';
 }
@@ -60,6 +111,21 @@ async function init() {
   $('prev').addEventListener('click', async () => render(await send('previous-post')));
   $('next').addEventListener('click', async () => render(await send('next-post')));
   $('auto').addEventListener('click', async () => render(await send('toggle-auto')));
+  $('prevImage').addEventListener('click', async () => render(await send('previous-image')));
+  $('nextImage').addEventListener('click', async () => render(await send('next-image')));
+
+  pageKeys = { ...(settings.pageKeys || {}) };
+  renderPageKeys();
+  $('arrowPreset').addEventListener('click', () => {
+    pageKeys = {
+      ...pageKeys,
+      'next-post': { code: 'ArrowDown' },
+      'previous-post': { code: 'ArrowUp' },
+      'next-image': { code: 'ArrowRight' },
+      'previous-image': { code: 'ArrowLeft' },
+    };
+    savePageKeys();
+  });
   $('editKeys').addEventListener('click', () => {
     if (chrome.commands.openShortcutSettings) chrome.commands.openShortcutSettings(); // Firefox
     else chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });

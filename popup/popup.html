@@ -17,6 +17,10 @@
       <button id="auto" class="primary">▶ Auto</button>
       <button id="next" title="Next post">▼</button>
     </section>
+    <section class="controls images">
+      <button id="prevImage" title="Previous image in a gallery">◀ Image</button>
+      <button id="nextImage" title="Next image in a gallery">Image ▶</button>
+    </section>
     <p id="unsupported" class="hint" hidden>Open Reddit or X in this tab to use the buttons.</p>
 
     <section class="card">
@@ -34,6 +38,16 @@
       <label><input type="checkbox" data-key="waitForVideos" /> Let videos finish (max 30s)</label>
       <label><input type="checkbox" data-key="smooth" /> Smooth scrolling</label>
       <label><input type="checkbox" data-key="hud" /> Show indicator in the corner</label>
+    </section>
+
+    <section class="card">
+      <h2>Page keys</h2>
+      <ul id="pageKeys" class="keys"></ul>
+      <button id="arrowPreset" class="link">Use arrow keys</button>
+      <p class="hint">
+        Any key, no Ctrl/Alt needed. Works while the Reddit/X window is focused (not while you're
+        typing). Click a key to change it; Backspace clears it, Esc cancels.
+      </p>
     </section>
 
     <section class="card">

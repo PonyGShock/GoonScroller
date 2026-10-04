@@ -306,8 +306,16 @@
   listen(window, 'focus', loadShortcuts);
   listen(document, 'visibilitychange', () => document.hidden || loadShortcuts());
 
+  const isTyping = (e) => !!e.composedPath()[0]?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="textbox"]');
+
+  const matchesPageKey = (spec, e) =>
+    spec?.code === e.code && !!spec.ctrl === e.ctrlKey && !!spec.alt === e.altKey && !!spec.shift === e.shiftKey && !!spec.meta === e.metaKey;
+
   listen(window, 'keydown', (e) => {
-    const command = !e.repeat && pageShortcuts.find((c) => matchesShortcut(c.spec, e))?.name;
+    if (e.repeat || isTyping(e)) return;
+    const command =
+      Object.entries(settings.pageKeys || {}).find(([, spec]) => matchesPageKey(spec, e))?.[0] ??
+      pageShortcuts.find((c) => matchesShortcut(c.spec, e))?.name;
     if (!command) return;
     e.preventDefault();
     e.stopPropagation();
@@ -474,7 +482,8 @@
         if (auto) startCountdown();
         break;
       case 'previous-image':
-        if (!flipImage(-1)) hud.toast('No previous image');
+        // First image (or no gallery): back to the previous post, mirroring next-image.
+        if (!flipImage(-1)) navigate(-1);
         if (auto) startCountdown();
         break;
       case 'toggle-media-only':

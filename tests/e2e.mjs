@@ -253,6 +253,50 @@ await test('reddit: pressing Ctrl+Shift+2 / Ctrl+Shift+1 in the page works', asy
   assert.equal(await postAt('shreddit-post', 61), 'p0');
 });
 
+await test('reddit: plain arrow keys as page keys, incl. previous image back to the previous post', async () => {
+  await setSettings({
+    smooth: false,
+    pageKeys: {
+      'next-post': { code: 'ArrowDown' },
+      'previous-post': { code: 'ArrowUp' },
+      'next-image': { code: 'ArrowRight' },
+      'previous-image': { code: 'ArrowLeft' },
+    },
+  });
+  await open('https://www.reddit.com/r/test/');
+  const index = () => page.evaluate(() => document.querySelector('#p2 gallery-carousel').dataset.index);
+  await page.keyboard.press('ArrowDown');
+  await wait(600);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
+  await page.keyboard.press('ArrowDown');
+  await wait(600);
+  assert.equal(await postAt('shreddit-post', 61), 'p2');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await index(), '2');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await index(), '1');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await index(), '0');
+  await page.keyboard.press('ArrowLeft'); // first image: previous post
+  await wait(600);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
+  await page.keyboard.press('ArrowUp'); // top of the page
+  await wait(600);
+
+  // Not while typing.
+  await page.evaluate(() => {
+    const input = Object.assign(document.createElement('input'), { id: 'typing' });
+    document.querySelector('main').prepend(input);
+  });
+  const before = await page.evaluate(() => scrollY);
+  await page.focus('#typing');
+  await page.keyboard.press('ArrowDown');
+  await wait(600);
+  assert.equal(await page.evaluate(() => scrollY), before);
+  await setSettings({ pageKeys: {} });
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {
@@ -306,7 +350,18 @@ await test('popup renders with hotkeys listed', async () => {
   await popup.$eval('#delay', (s) => { s.value = s.max; s.dispatchEvent(new Event('input')); });
   assert.equal(await popup.textContent('#delayOut'), '5 min');
   assert.equal(await popup.textContent('#site'), 'Not on Reddit/X'); // the popup tab itself is active here
-  if (process.env.SCREENSHOT) await popup.screenshot({ path: process.env.SCREENSHOT });
+  // Record a page key: click the button, press a key.
+  await popup.click('#pageKeys button[data-command="toggle-auto"]');
+  await popup.keyboard.press('KeyP');
+  const stored = await sw.evaluate(() => chrome.storage.sync.get('pageKeys'));
+  assert.deepEqual(stored.pageKeys['toggle-auto'], { code: 'KeyP', ctrl: false, alt: false, shift: false, meta: false });
+  await popup.click('#arrowPreset');
+  assert.equal(await popup.textContent('#pageKeys button[data-command="next-image"]'), '→');
+  if (process.env.SCREENSHOT) await popup.screenshot({ path: process.env.SCREENSHOT, fullPage: true });
+  await popup.click('#pageKeys button[data-command="toggle-auto"]');
+  await popup.keyboard.press('Backspace');
+  assert.equal(await popup.textContent('#pageKeys button[data-command="toggle-auto"]'), 'set');
+  await sw.evaluate(() => chrome.storage.sync.set({ pageKeys: {} }));
   assert.deepEqual(popupErrors, []);
   await popup.close();
 });
