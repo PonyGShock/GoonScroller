@@ -20,6 +20,9 @@
     <section class="controls images">
       <button id="prevImage" title="Previous image in a gallery">◀ Image</button>
       <button id="nextImage" title="Next image in a gallery">Image ▶</button>
+      <button id="upvote" title="Upvote (Reddit) / like (X)">⬆ Upvote</button>
+      <button id="save" title="Save (Reddit) / bookmark (X)">★ Save</button>
+      <button id="openMedia" class="wide" title="Open / close the picture full screen">⛶ Open / close picture</button>
     </section>
     <p id="unsupported" class="hint" hidden>Open Reddit or X in this tab to use the buttons.</p>
 
@@ -29,6 +32,17 @@
         <output id="delayOut">6s</output>
       </div>
       <input id="delay" type="range" min="0" max="17" step="1" />
+      <div class="row select-row">
+        <label for="videoWait">Let videos play</label>
+        <select id="videoWait">
+          <option value="0">don't wait</option>
+          <option value="30">up to 30s</option>
+          <option value="60">up to 1 min</option>
+          <option value="120">up to 2 min</option>
+          <option value="300">up to 5 min</option>
+          <option value="-1">the whole video</option>
+        </select>
+      </div>
     </section>
 
     <section class="card options">
@@ -36,7 +50,6 @@
       <label><input type="checkbox" data-key="pauseOnHover" /> Pause while mouse is on the page</label>
       <label><input type="checkbox" data-key="flipGalleries" /> Auto-scroll flips through galleries</label>
       <label><input type="checkbox" data-key="autoplayVideos" /> Autoplay videos</label>
-      <label><input type="checkbox" data-key="waitForVideos" /> Let videos finish (max 30s)</label>
       <label><input type="checkbox" data-key="smooth" /> Smooth scrolling</label>
       <label><input type="checkbox" data-key="hud" /> Show indicator in the corner</label>
     </section>

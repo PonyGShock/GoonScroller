@@ -48,7 +48,7 @@
               media ? `<div data-testid="tweetPhoto" style="height:${h - 80}px"></div>` : ''
             }${n === 2 ? '<video src="https://media.test/clip.webm" preload="auto" style="height:40px"></video>' : ''}${
               n === 3 ? '<div data-testid="videoPlayer"><button data-testid="playButton" aria-label="Play">▶</button></div>' : ''
-            }</article>`;
+            }<button data-testid="like">♥</button><button data-testid="bookmark">🔖</button></article>`;
           }
           list.append(cell);
           y += h;
@@ -63,6 +63,25 @@
           v.play();
           return;
         }
+        // Clicking a photo opens a viewer dialog with slide arrows and a close button.
+        if (e.target.closest?.('[data-testid="tweetPhoto"]') && !document.getElementById('viewer')) {
+          const d = document.createElement('div');
+          d.id = 'viewer';
+          d.setAttribute('role', 'dialog');
+          d.setAttribute('aria-modal', 'true');
+          d.dataset.slide = '0';
+          d.style.cssText = 'position:fixed;inset:0;z-index:20;background:#000c';
+          d.innerHTML = '<button aria-label="Close">x</button><button aria-label="Previous slide">&lt;</button><button aria-label="Next slide">&gt;</button>';
+          const [close, prev, next] = d.querySelectorAll('button');
+          close.onclick = () => d.remove();
+          prev.onclick = () => (d.dataset.slide = String(Math.max(0, +d.dataset.slide - 1)));
+          next.onclick = () => (d.dataset.slide = String(Math.min(3, +d.dataset.slide + 1)));
+          document.body.append(d);
+          return;
+        }
+        const b = e.target.closest?.('button[data-testid]');
+        const swap = { like: 'unlike', unlike: 'like', bookmark: 'removeBookmark', removeBookmark: 'bookmark' };
+        if (b && swap[b.dataset.testid]) b.dataset.testid = swap[b.dataset.testid];
       });
       add(20);
       addEventListener('scroll', () => {

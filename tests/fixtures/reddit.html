@@ -84,6 +84,30 @@
         box.dataset.index = String(i);
         box.textContent = 'image ' + i;
       });
+      // Like Reddit: the vote buttons and the "…" menu live in each post's own shadow root. The
+      // menu's "Save" is <li><div role="menuitem"><span>Save</span></div></li> and only the div
+      // reacts to clicks.
+      customElements.define('shreddit-post', class extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) return;
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `<div class="bar"><button upvote aria-label="Upvote" aria-pressed="false">⬆</button>
+            <button aria-label="Open user actions">…</button><ul role="menu"></ul></div><slot></slot><slot name="post-media-container"></slot>`;
+          const [up, more] = root.querySelectorAll('button');
+          const menu = root.querySelector('ul');
+          up.onclick = () => up.setAttribute('aria-pressed', String(up.getAttribute('aria-pressed') !== 'true'));
+          more.onclick = () => {
+            if (menu.children.length) return menu.replaceChildren(); // toggles closed
+            menu.innerHTML = `<li><div role="menuitem" tabindex="-1"><span>${this.dataset.saved ? 'Unsave' : 'Save'}</span></div></li>
+              <li><div role="menuitem" tabindex="-1"><span>Hide</span></div></li>`;
+            menu.querySelector('div').onclick = () => {
+              if (this.dataset.saved) delete this.dataset.saved;
+              else this.dataset.saved = '1';
+              menu.replaceChildren();
+            };
+          };
+        }
+      });
       add(10);
       new IntersectionObserver((entries) => {
         if (entries.some((e) => e.isIntersecting) && n < 40) setTimeout(() => add(10), 200);

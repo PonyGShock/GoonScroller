@@ -127,6 +127,24 @@ button:disabled {
   color: var(--accent);
 }
 
+.controls.images .wide {
+  grid-column: 1 / -1;
+}
+
+.select-row {
+  align-items: center;
+  margin-top: 8px;
+}
+
+select {
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
 button.primary {
   background: var(--accent);
   border-color: var(--accent);

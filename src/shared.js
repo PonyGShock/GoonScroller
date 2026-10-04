@@ -5,7 +5,7 @@ globalThis.GoonShared = {
     mediaOnly: true, // skip posts without images or videos
     smooth: true, // animate the scroll
     pauseOnHover: true, // pause auto mode while the mouse is on the page
-    waitForVideos: true, // let a playing video finish before moving on (capped at 30s)
+    videoWait: 60, // auto mode: let a video play through once, up to this many seconds (0 = off, -1 = whole video)
     flipGalleries: true, // auto mode clicks through gallery images before moving on
     autoplayVideos: true, // start the video in the post we land on (X often won't by itself)
     hud: true, // small on-screen indicator in the corner
@@ -20,6 +20,9 @@ globalThis.GoonShared = {
     ['next-image', 'Next image'],
     ['previous-image', 'Previous image'],
     ['toggle-auto', 'Start / stop auto'],
+    ['open-media', 'Open / close picture'],
+    ['upvote', 'Upvote / like'],
+    ['save', 'Save / bookmark'],
   ],
 
   formatKey(spec) {

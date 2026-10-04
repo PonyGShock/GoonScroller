@@ -13,7 +13,6 @@
   const TOL = 6; // px a post must sit past the current position to count as the next one
   const SNAP = 30; // px within which the post we last scrolled to still counts as "current"
   const LOAD_TIMEOUT = 6000; // ms to wait for the feed to load more posts
-  const MAX_VIDEO_WAIT = 30000; // ms, cap for "wait for videos"
   const HOVER_STALE = 60000; // ms without mouse movement before hovering stops pausing auto mode
   const RESUME_KEY = 'goonscroller:resume-auto';
   // Gallery arrows are matched by their (possibly translated) label, or by a slot name.
@@ -74,6 +73,111 @@
     },
   ];
 
+  // ------------------------------------------------------------------ upvote / like, save / bookmark
+
+  const labelOf = (el) => (el.getAttribute('aria-label') || el.textContent || '').trim();
+  const findIn = (root, selector, test) => deepQueryAll(root, selector).find(test) ?? null;
+  const BUTTONS = 'button, [role="button"], [role="menuitem"], a, li';
+  const SAVE_LABEL = /^(save|unsave|remove from saved|opslaan|niet meer opslaan|verwijderen uit opgeslagen)$/i;
+  const SAVED_LABEL = /unsave|remove|niet meer|verwijderen/i;
+
+  // Each returns { el, on } for the post: the control to click and whether it's already active.
+  const ACTIONS = {
+    X: {
+      upvote: (post) => {
+        const el = post.querySelector('[data-testid="like"], [data-testid="unlike"]');
+        return el && { el, on: el.dataset.testid === 'unlike', words: ['Liked', 'Like removed'] };
+      },
+      save: (post) => {
+        const el = post.querySelector('[data-testid="bookmark"], [data-testid="removeBookmark"]');
+        return el && { el, on: el.dataset.testid === 'removeBookmark', words: ['Bookmarked', 'Bookmark removed'] };
+      },
+    },
+    Reddit: {
+      upvote: (post) => {
+        const words = ['Upvoted', 'Upvote removed'];
+        const old = post.querySelector('.midcol .arrow.up, .midcol .arrow.upmod');
+        if (old) return { el: old, on: old.classList.contains('upmod'), words };
+        const el = findIn(post, 'button', (b) => b.hasAttribute('upvote') || /^(upvote|stem omhoog)/i.test(b.getAttribute('aria-label') || ''));
+        return el && { el, on: el.getAttribute('aria-pressed') === 'true', words };
+      },
+      save: async (post) => {
+        const words = ['Saved', 'Unsaved'];
+        const old = post.querySelector('.save-button a, a.save-button');
+        if (old) return { el: old, on: /unsave/i.test(old.textContent), words };
+        // New Reddit keeps "Save" in the post's "…" menu, which may need opening first.
+        // Click the innermost match (e.g. the div[role=menuitem], not the <li> around it): sites
+        // attach the handler to the item itself, and a click on the wrapper never reaches it.
+        const find = (root) => {
+          const hits = deepQueryAll(root, BUTTONS).filter((b) => SAVE_LABEL.test(labelOf(b)));
+          return hits.find((h) => !hits.some((o) => o !== h && h.contains(o))) ?? null;
+        };
+        let el = find(post);
+        if (!el) {
+          const menu = findIn(post, 'button', (b) => /overflow|more options|meer opties|open user actions/i.test(b.getAttribute('aria-label') || ''));
+          if (!menu) return null;
+          menu.click();
+          for (let i = 0; i < 15 && !el; i++) {
+            await sleep(100);
+            el = find(post) ?? find(document);
+          }
+          if (!el) menu.click(); // close the menu again
+        }
+        return el && { el, on: SAVED_LABEL.test(labelOf(el)), words };
+      },
+    },
+  };
+
+  const VIDEO_PLAYERS = 'shreddit-player, shreddit-player-2, [data-testid="videoPlayer"], [data-testid="videoComponent"]';
+  const MEDIA_TARGETS = [
+    '[data-testid="tweetPhoto"] img',
+    '[data-testid="tweetPhoto"]',
+    'img.media-lightbox-img',
+    'gallery-carousel img',
+    '[slot="post-media-container"] img',
+    'gallery-carousel',
+    '[slot="post-media-container"]',
+    '.expando-button', // old.reddit: expand inline
+    'a.thumbnail',
+  ];
+  const CLOSE_LABEL = /^(close|sluiten|schließen|fermer|cerrar)\b/i;
+
+  // Open the current post's picture in the site's own full-screen viewer, or close it if open.
+  function toggleMedia() {
+    const viewer = openViewer();
+    if (viewer) {
+      const close = deepQueryAll(viewer, 'button, [role="button"]').find((b) => CLOSE_LABEL.test(b.getAttribute('aria-label') || ''));
+      if (close) return close.click();
+      const init = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, composed: true, cancelable: true };
+      for (const target of [document.activeElement ?? document.body, document]) target.dispatchEvent(new KeyboardEvent('keydown', init));
+      return;
+    }
+    const post = currentPost();
+    const target = post && MEDIA_TARGETS.map((s) => deepQueryAll(post, s).find((el) => el.getBoundingClientRect().height > 0)).find(Boolean);
+    if (!target) return hud.toast('No picture to open');
+    realClick(target);
+  }
+
+  // A click with the pointer events around it, for handlers that listen to pointerdown/up.
+  function realClick(el) {
+    const r = el.getBoundingClientRect();
+    const at = { bubbles: true, composed: true, cancelable: true, view: window, button: 0,
+      clientX: r.left + r.width / 2, clientY: r.top + Math.min(r.height / 2, 200) };
+    el.dispatchEvent(new PointerEvent('pointerdown', { ...at, pointerType: 'mouse', isPrimary: true }));
+    el.dispatchEvent(new MouseEvent('mousedown', at));
+    el.dispatchEvent(new PointerEvent('pointerup', { ...at, pointerType: 'mouse', isPrimary: true }));
+    el.dispatchEvent(new MouseEvent('mouseup', at));
+    el.dispatchEvent(new MouseEvent('click', at));
+  }
+
+  async function postAction(kind) {
+    const post = currentPost();
+    const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
+    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'No save button found');
+    control.el.click();
+    hud.toast(control.on ? control.words[1] : control.words[0]);
+  }
+
   const site = SITES.find((s) => s.host.test(location.hostname)) ?? null;
 
   // ------------------------------------------------------------------ state
@@ -83,7 +187,6 @@
   let inFlight = false; // our own smooth scroll is still running
   let navToken = 0; // bumped by every navigation and user scroll; cancels stale follow-ups
   let arrivedAt = 0;
-  let videoExtended = false;
   let loading = false;
   let auto = false;
   let autoTimer = 0;
@@ -198,7 +301,6 @@
     const token = ++navToken;
     pauseStartedVideos();
     cursor = post.el;
-    videoExtended = false;
     const top = clamp(post.top - anchor, 0, Math.max(0, maxScroll()));
     const smooth = settings.smooth && Math.abs(top - scrollY) > 1;
     inFlight = smooth;
@@ -219,7 +321,6 @@
 
   // ------------------------------------------------------------------ autoplay
 
-  const findIn = (root, selector, test) => deepQueryAll(root, selector).find(test) ?? null;
   let startedVideos = [];
   const PLAY_BUTTON = /^(play|play video|afspelen|video afspelen)$/i;
 
@@ -394,10 +495,7 @@
     if (mouseOnPage()) return pauseForMouse();
     if (document.hidden) return startCountdown(1000); // tab in the background: wait
     const wait = videoWait();
-    if (wait) {
-      videoExtended = true;
-      return startCountdown(wait, 'Waiting for video…');
-    }
+    if (wait) return startCountdown(wait.ms, wait.label);
     if (settings.flipGalleries && (await flipImage(1))) return startCountdown();
     await navigate(1);
     startCountdown();
@@ -433,17 +531,37 @@
   }, { capture: true });
 
   // Extra time for a video on the current post that's still playing (once per post).
+  // How much longer auto-scroll should stay on the current post so its video plays through once
+  // (capped by the "Let videos play" setting). Re-checked on every tick, so it can't skip ahead.
+  // Feed videos usually loop, so "once" is measured from when we arrived at the post.
   function videoWait() {
-    if (!settings.waitForVideos || videoExtended || !cursor?.isConnected) return 0;
+    const limit = settings.videoWait; // seconds; 0 = don't wait, -1 = whole video
+    if (!limit || !cursor?.isConnected) return null;
     const r = cursor.getBoundingClientRect();
-    if (r.bottom <= 0 || r.top >= innerHeight) return 0;
-    let remaining = 0;
-    for (const v of deepQueryAll(cursor, 'video')) {
-      if (v.loop || v.paused || v.ended || !Number.isFinite(v.duration)) continue;
-      remaining = Math.max(remaining, ((v.duration - v.currentTime) / (v.playbackRate || 1)) * 1000);
+    if (r.bottom <= 0 || r.top >= innerHeight) return null; // user scrolled elsewhere
+    const elapsed = Date.now() - arrivedAt;
+    const left = (limit < 0 ? Infinity : limit * 1000) - elapsed;
+    if (left <= 300) return null;
+
+    const videos = deepQueryAll(cursor, 'video');
+    const player = videos.length || cursor.querySelector(VIDEO_PLAYERS);
+    if (!player) return null;
+    const video = videos
+      .filter((v) => Number.isFinite(v.duration) && v.duration > 0)
+      .sort((a, b) => b.duration - a.duration)[0];
+    if (!video || (video.paused && !video.ended)) {
+      // Still loading or starting: look again shortly, but don't hang on one that never plays.
+      return elapsed < 8000 ? { ms: 1000, label: 'Waiting for video…' } : null;
     }
-    const budget = MAX_VIDEO_WAIT - (Date.now() - arrivedAt);
-    return remaining > 500 && budget > 500 ? Math.min(remaining + 300, budget) : 0;
+    if (video.ended) return null;
+    const rate = video.playbackRate || 1;
+    const remaining = video.loop
+      ? video.duration * 1000 - elapsed
+      : ((video.duration - video.currentTime) * 1000) / rate;
+    const ms = Math.min(remaining + 200, left);
+    if (ms <= 300) return null;
+    const secs = Math.ceil(ms / 1000);
+    return { ms, label: `Video · ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} left` };
   }
 
   // ------------------------------------------------------------------ gallery images
@@ -541,6 +659,7 @@
   }
 
   function deepQueryAll(root, selector, out = []) {
+    if (root.shadowRoot) deepQueryAll(root.shadowRoot, selector, out);
     out.push(...root.querySelectorAll(selector));
     for (const el of root.querySelectorAll('*')) if (el.shadowRoot) deepQueryAll(el.shadowRoot, selector, out);
     return out;
@@ -577,6 +696,13 @@
         // First image (or no gallery): back to the previous post, mirroring next-image.
         flipImage(-1).then((moved) => moved || (openViewer() ? hud.toast('First image') : navigate(-1)));
         if (auto) startCountdown();
+        break;
+      case 'open-media':
+        toggleMedia();
+        break;
+      case 'upvote':
+      case 'save':
+        postAction(command);
         break;
       case 'toggle-media-only':
         saveSetting({ mediaOnly: !settings.mediaOnly });

@@ -1,7 +1,7 @@
 const { DEFAULTS, DELAY_STEPS, PAGE_KEY_ACTIONS, nearestStep, formatDelay, formatKey } = globalThis.GoonShared;
 const $ = (id) => document.getElementById(id);
 
-const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
+const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'open-media', 'upvote', 'save', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
 
 let tabId = null;
 let pageKeys = {};
@@ -66,7 +66,7 @@ function render(state) {
   $('site').textContent = ok ? state.site : 'Not on Reddit/X';
   $('site').classList.toggle('on', ok);
   $('unsupported').hidden = ok;
-  for (const id of ['prev', 'next', 'auto', 'prevImage', 'nextImage']) $(id).disabled = !ok;
+  for (const id of ['prev', 'next', 'auto', 'prevImage', 'nextImage', 'upvote', 'save', 'openMedia']) $(id).disabled = !ok;
   $('auto').classList.toggle('on', !!state?.auto);
   $('auto').textContent = state?.auto ? '❚❚ Stop auto' : '▶ Auto';
 }
@@ -124,6 +124,12 @@ async function init() {
   $('auto').addEventListener('click', async () => render(await send('toggle-auto')));
   $('prevImage').addEventListener('click', async () => render(await send('previous-image')));
   $('nextImage').addEventListener('click', async () => render(await send('next-image')));
+  $('upvote').addEventListener('click', async () => render(await send('upvote')));
+  $('save').addEventListener('click', async () => render(await send('save')));
+  $('openMedia').addEventListener('click', async () => render(await send('open-media')));
+
+  $('videoWait').value = String(settings.videoWait);
+  $('videoWait').addEventListener('change', () => chrome.storage.sync.set({ videoWait: Number($('videoWait').value) }));
 
   pageKeys = { ...(settings.pageKeys || {}) };
   renderPageKeys();

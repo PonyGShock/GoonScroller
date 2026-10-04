@@ -66,7 +66,7 @@ async function open(url) {
 
 // ---------------------------------------------------------------- new Reddit
 
-await setSettings({ smooth: false, mediaOnly: true, delay: 6, pauseOnHover: true, waitForVideos: true });
+await setSettings({ smooth: false, mediaOnly: true, delay: 6, pauseOnHover: true, videoWait: 60 });
 await open('https://www.reddit.com/r/test/');
 
 await test('reddit: first post lands right under the sticky header', async () => {
@@ -329,6 +329,94 @@ await test('reddit: gallery hotkeys work inside the full-screen image viewer', a
   await setSettings({ pageKeys: {} });
 });
 
+await test('reddit: upvote and save (via the "…" menu) the current post', async () => {
+  await setSettings({ smooth: false });
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2
+  await wait(600);
+  await cmd('upvote');
+  assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'true');
+  assert.equal(await page.evaluate(() => document.querySelector('#p0').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'false');
+  await cmd('upvote');
+  assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('button[upvote]').getAttribute('aria-pressed')), 'false');
+  await cmd('upvote');
+  await cmd('save');
+  await wait(300);
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
+  await cmd('save');
+  await wait(300);
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
+});
+
+await test('reddit: looping videos play through once, up to the "let videos play" limit', async () => {
+  await open('https://www.reddit.com/r/test/');
+  await page.evaluate(async () => {
+    const v = Object.assign(document.createElement('video'), { muted: true, loop: true, src: 'https://media.test/clip.webm' });
+    document.querySelector('#p2').append(v);
+    await new Promise((r) => (v.onloadedmetadata = r));
+    if (!Number.isFinite(v.duration)) {
+      v.currentTime = 1e9;
+      await new Promise((r) => (v.ontimeupdate = r));
+      v.currentTime = 0;
+    }
+  });
+  const duration = await page.evaluate(() => document.querySelector('#p2 video').duration);
+  // Time spent on p2 with a 1s delay.
+  async function timeOnP2() {
+    await open('https://www.reddit.com/r/test/');
+    await page.evaluate(async () => {
+      const v = Object.assign(document.createElement('video'), { muted: true, loop: true, src: 'https://media.test/clip.webm' });
+      document.querySelector('#p2').append(v);
+      await new Promise((r) => (v.onloadedmetadata = r));
+      if (!Number.isFinite(v.duration)) {
+        v.currentTime = 1e9;
+        await new Promise((r) => (v.ontimeupdate = r));
+        v.currentTime = 0;
+      }
+    });
+    await cmd('next-post'); // p0
+    await wait(600);
+    await cmd('toggle-auto');
+    let arrived = 0;
+    for (let i = 0; i < 200; i++) {
+      const at = await postAt('shreddit-post', 61);
+      if (at === 'p2' && !arrived) arrived = Date.now();
+      if (arrived && at !== 'p2') break;
+      await wait(100);
+    }
+    await cmd('toggle-auto');
+    return (Date.now() - arrived) / 1000;
+  }
+  await setSettings({ delay: 1, videoWait: -1, flipGalleries: false }); // p2 is also a gallery
+  const whole = await timeOnP2();
+  assert.ok(whole >= duration - 0.3 && whole < duration + 2.5, `whole video: stayed ${whole}s for a ${duration}s clip`);
+  await setSettings({ videoWait: 2 });
+  const capped = await timeOnP2();
+  assert.ok(capped >= 1.7 && capped < 3.5, `2s limit: stayed ${capped}s`);
+  await setSettings({ videoWait: 0 });
+  const off = await timeOnP2();
+  assert.ok(off < 2, `off: stayed ${off}s`);
+  await setSettings({ videoWait: 60, flipGalleries: true });
+});
+
+await test('reddit: open / close picture key opens the gallery in the full-screen viewer', async () => {
+  await setSettings({ smooth: false, delay: 6 });
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2 (gallery)
+  await wait(600);
+  await cmd('open-media');
+  await wait(300);
+  assert.equal(await page.locator('#lightbox').count(), 1);
+  await cmd('next-image');
+  await wait(500);
+  assert.equal(await page.getAttribute('#lightbox', 'data-index'), '1');
+  await cmd('open-media'); // closes it again
+  await wait(300);
+  assert.equal(await page.locator('#lightbox').count(), 0);
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {
@@ -368,11 +456,42 @@ await test('x: videos start when the scroller lands on them and pause when it mo
   await wait(800);
 });
 
+await test('x: open / close picture key opens the photo viewer, slides flip inside it', async () => {
+  await cmd('open-media');
+  await wait(300);
+  assert.equal(await page.locator('#viewer').count(), 1);
+  await cmd('next-image');
+  await wait(300);
+  assert.equal(await page.getAttribute('#viewer', 'data-slide'), '1');
+  await cmd('previous-image');
+  await wait(300);
+  assert.equal(await page.getAttribute('#viewer', 'data-slide'), '0');
+  await cmd('open-media');
+  await wait(300);
+  assert.equal(await page.locator('#viewer').count(), 0);
+});
+
+await test('x: like and bookmark the current tweet', async () => {
+  await cmd('upvote');
+  await cmd('save');
+  const current = await postAt('article', 54);
+  assert.equal(await page.locator(`#${current} [data-testid="unlike"]`).count(), 1);
+  assert.equal(await page.locator(`#${current} [data-testid="removeBookmark"]`).count(), 1);
+  assert.equal(await page.locator('[data-testid="unlike"]').count(), 1);
+  await cmd('upvote');
+  assert.equal(await page.locator('[data-testid="unlike"]').count(), 0);
+});
+
 // ---------------------------------------------------------------- old Reddit
 
 await test('old reddit: walks the listing, skips self/promoted posts, then opens the next page', async () => {
   await open('https://old.reddit.com/r/test/');
   await expectSequence('.thing', 4, ['pg1-0', 'pg1-2']);
+  await cmd('upvote');
+  await cmd('save');
+  assert.equal(await page.locator('#pg1-2 .arrow.upmod').count(), 1);
+  assert.equal(await page.textContent('#pg1-2 .save-button a'), 'unsave');
+  assert.equal(await page.locator('.arrow.upmod').count(), 1);
   await cmd('next-post'); // pg1-4 can't reach the top (end of page)
   await wait(500);
   await cmd('next-post');
