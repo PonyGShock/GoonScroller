@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoonScroller</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon-32.png" alt="" width="20" height="20" />
+      <h1>GoonScroller</h1>
+      <span id="site" class="site"></span>
+    </header>
+
+    <section class="controls">
+      <button id="prev" title="Previous post">▲</button>
+      <button id="auto" class="primary">▶ Auto</button>
+      <button id="next" title="Next post">▼</button>
+    </section>
+    <p id="unsupported" class="hint" hidden>Open Reddit or X in this tab to use the buttons.</p>
+
+    <section class="card">
+      <div class="row">
+        <span>Auto-scroll: one post every</span>
+        <output id="delayOut">6s</output>
+      </div>
+      <input id="delay" type="range" min="0" max="13" step="1" />
+    </section>
+
+    <section class="card options">
+      <label><input type="checkbox" data-key="mediaOnly" /> Only stop on images &amp; videos</label>
+      <label><input type="checkbox" data-key="pauseOnHover" /> Pause while mouse is on the page</label>
+      <label><input type="checkbox" data-key="waitForVideos" /> Let videos finish (max 30s)</label>
+      <label><input type="checkbox" data-key="smooth" /> Smooth scrolling</label>
+      <label><input type="checkbox" data-key="hud" /> Show indicator in the corner</label>
+    </section>
+
+    <section class="card">
+      <h2>Hotkeys</h2>
+      <ul id="shortcuts"></ul>
+      <button id="editKeys" class="link">Change hotkeys…</button>
+      <p class="hint">Set them to <b>Global</b> there so they work while you're in a game.</p>
+    </section>
+
+    <script src="../src/shared.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

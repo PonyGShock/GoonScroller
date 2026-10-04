@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>x mock</title>
+    <style>
+      body { margin: 0; font-family: sans-serif; }
+      #layout { display: flex; justify-content: center; }
+      nav { position: sticky; top: 0; height: 100vh; width: 250px; background: #eef; }
+      [data-testid='primaryColumn'] { width: 600px; border-left: 1px solid #ccc; border-right: 1px solid #ccc; }
+      .hdr { position: sticky; top: 0; height: 53px; background: rgba(255, 255, 255, 0.85); z-index: 3; border-bottom: 1px solid #ddd; }
+      #list { position: relative; }
+      [data-testid='cellInnerDiv'] { position: absolute; left: 0; right: 0; top: 0; }
+      article { display: block; box-sizing: border-box; border-bottom: 1px solid #eee; padding: 12px; }
+      [data-testid='tweetPhoto'] { background: #58c; }
+      .newposts { position: fixed; top: 60px; left: 50%; width: 120px; height: 30px; margin-left: -60px; background: #1d9bf0; z-index: 4; }
+    </style>
+  </head>
+  <body>
+    <div id="layout">
+      <nav>nav</nav>
+      <div data-testid="primaryColumn">
+        <div class="hdr">Home</div>
+        <div style="height: 120px">compose</div>
+        <section><div id="list"></div></section>
+      </div>
+      <aside style="width: 300px"></aside>
+    </div>
+    <div class="newposts">Show 12 posts</div>
+    <script>
+      // Virtualised like X: cells are absolutely positioned with translateY.
+      // Every 7th cell is "Who to follow" (not a post); cells with n % 3 === 1 are text-only.
+      let n = 0;
+      let y = 0;
+      function add(count) {
+        for (let i = 0; i < count; i++, n++) {
+          const cell = document.createElement('div');
+          cell.dataset.testid = 'cellInnerDiv';
+          cell.style.transform = `translateY(${y}px)`;
+          let h;
+          if (n % 7 === 6) {
+            h = 200;
+            cell.innerHTML = `<div style="height:${h}px">Who to follow</div>`;
+          } else {
+            const media = n % 3 !== 1;
+            h = media ? 300 + ((n * 61) % 300) : 120;
+            cell.innerHTML = `<article id="t${n}" data-testid="tweet" style="height:${h}px">tweet ${n}${
+              media ? `<div data-testid="tweetPhoto" style="height:${h - 60}px"></div>` : ''
+            }</article>`;
+          }
+          list.append(cell);
+          y += h;
+        }
+        list.style.height = y + 'px';
+      }
+      add(20);
+      addEventListener('scroll', () => {
+        if (n < 60 && scrollY + innerHeight > document.documentElement.scrollHeight - 200) add(10);
+      });
+    </script>
+  </body>
+</html>

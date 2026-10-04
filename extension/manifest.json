@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "GoonScroller",
+  "version": "1.0.0",
+  "description": "Hands-free, post-by-post scrolling for Reddit and X, with global hotkeys that work while you game.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "GoonScroller",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "permissions": ["storage", "scripting"],
+  "host_permissions": ["*://*.reddit.com/*", "*://*.x.com/*", "*://*.twitter.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*", "*://*.x.com/*", "*://*.twitter.com/*"],
+      "js": ["src/shared.js", "src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "next-post": {
+      "suggested_key": { "default": "Ctrl+Shift+2", "mac": "Command+Shift+8" },
+      "description": "Next post",
+      "global": true
+    },
+    "previous-post": {
+      "suggested_key": { "default": "Ctrl+Shift+1", "mac": "Command+Shift+7" },
+      "description": "Previous post",
+      "global": true
+    },
+    "toggle-auto": {
+      "suggested_key": { "default": "Ctrl+Shift+3", "mac": "Command+Shift+9" },
+      "description": "Start / stop auto-scroll",
+      "global": true
+    },
+    "faster": {
+      "description": "Auto-scroll: shorter delay",
+      "global": true
+    },
+    "slower": {
+      "description": "Auto-scroll: longer delay",
+      "global": true
+    },
+    "toggle-media-only": {
+      "description": "Toggle 'images & videos only'",
+      "global": true
+    },
+    "_execute_action": {
+      "description": "Open the GoonScroller panel"
+    }
+  }
+}

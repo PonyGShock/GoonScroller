@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>old reddit mock</title>
+    <style>
+      body { margin: 0; font-family: verdana, sans-serif; }
+      #header { height: 100px; background: #cee3f8; }
+      .thing { height: 300px; border-bottom: 1px solid #ddd; }
+      .clearleft { clear: left; }
+    </style>
+  </head>
+  <body>
+    <div id="header">old reddit</div>
+    <div class="content">
+      <div id="siteTable" class="sitetable linklisting"></div>
+      <div class="nav-buttons"></div>
+    </div>
+    <script>
+      // 3 pages of 5 posts; the 2nd post on each page is a text post.
+      const page = Number(new URLSearchParams(location.search).get('page') || 1);
+      for (let i = 0; i < 5; i++) {
+        const t = document.createElement('div');
+        t.id = `pg${page}-${i}`;
+        t.className = 'thing link' + (i === 3 && page === 1 ? ' promoted' : '');
+        t.dataset.domain = i === 1 ? 'self.test' : 'i.redd.it';
+        t.textContent = `page ${page} post ${i}`;
+        siteTable.append(t, Object.assign(document.createElement('div'), { className: 'clearleft' }));
+      }
+      if (page < 3) {
+        document.querySelector('.nav-buttons').innerHTML = `<span class="next-button"><a href="?page=${page + 1}">next ›</a></span>`;
+      }
+    </script>
+  </body>
+</html>
