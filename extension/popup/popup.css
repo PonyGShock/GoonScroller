@@ -11,6 +11,13 @@
   box-sizing: border-box;
 }
 
+/* Explicit sizes: Firefox measures the panel from the document, and can collapse it otherwise. */
+html {
+  width: 310px;
+  min-height: 420px;
+  background: var(--bg);
+}
+
 body {
   width: 310px;
   margin: 0;

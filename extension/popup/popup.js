@@ -38,10 +38,10 @@ async function renderShortcuts() {
 }
 
 async function init() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   tabId = tab?.id ?? null;
 
-  const settings = await chrome.storage.sync.get(DEFAULTS);
+  const settings = await chrome.storage.sync.get(DEFAULTS).catch(() => ({ ...DEFAULTS }));
 
   for (const box of document.querySelectorAll('input[data-key]')) {
     box.checked = !!settings[box.dataset.key];
@@ -64,8 +64,12 @@ async function init() {
     else chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
   });
 
-  renderShortcuts();
+  renderShortcuts().catch(() => {});
   render(await send(null));
 }
 
-init();
+init().catch((err) => {
+  // Keep the panel usable and show what went wrong instead of an empty box.
+  $('unsupported').hidden = false;
+  $('unsupported').textContent = `Something went wrong: ${err?.message || err}`;
+});

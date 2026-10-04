@@ -17,6 +17,10 @@
       "32": "icons/icon-32.png"
     }
   },
+  "options_ui": {
+    "page": "popup/popup.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "src/background.js",
     "scripts": [

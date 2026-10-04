@@ -120,6 +120,9 @@ Installing in Firefox:
   `xpinstall.signatures.required` to `false` in `about:config`.
 - Firefox may ask you to allow access to reddit.com and x.com. Allow it (or right-click the icon
   → Manage Extension → Permissions), otherwise nothing happens on those sites.
+- If the toolbar panel shows up tiny or empty, open the settings as a page instead: about:addons →
+  GoonScroller → **Preferences**. If it still fails, open `about:debugging#/runtime/this-firefox`,
+  click **Inspect** next to GoonScroller and send a screenshot of the Console errors.
 - Change hotkeys via **Change hotkeys…** in the panel (or about:addons → ⚙ → Manage Extension Shortcuts).
 
 ## Development
