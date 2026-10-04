@@ -299,6 +299,36 @@ await test('reddit: plain arrow keys as page keys, incl. previous image back to 
   await setSettings({ pageKeys: {} });
 });
 
+await test('reddit: gallery hotkeys work inside the full-screen image viewer', async () => {
+  await setSettings({ smooth: false, pageKeys: { 'next-image': { code: 'ArrowRight' }, 'previous-image': { code: 'ArrowLeft' } } });
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2 (gallery)
+  await wait(600);
+  await page.click('#p2 gallery-carousel', { position: { x: 200, y: 60 } });
+  const index = () => page.evaluate(() => document.getElementById('lightbox').dataset.index);
+  assert.equal(await index(), '0');
+
+  await cmd('next-image'); // global hotkey path
+  await wait(500);
+  assert.equal(await index(), '1');
+  await page.keyboard.press('ArrowRight'); // page key: must move exactly one image, not two
+  await wait(500);
+  assert.equal(await index(), '2');
+  await cmd('next-image'); // last image: stays in the viewer, doesn't scroll the feed behind it
+  await wait(600);
+  assert.equal(await index(), '2');
+  assert.equal(await postAt('shreddit-post', 61), 'p2');
+  await page.keyboard.press('ArrowLeft');
+  await wait(500);
+  assert.equal(await index(), '1');
+  await cmd('previous-image');
+  await wait(500);
+  assert.equal(await index(), '0');
+  await page.keyboard.press('Escape');
+  await setSettings({ pageKeys: {} });
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {

@@ -62,6 +62,28 @@
           next.onclick = () => { if (this.dataset.index !== '2') this.dataset.index = String(+this.dataset.index + 1); };
         }
       });
+      // Full-screen viewer like Reddit's lightbox: opens on clicking a gallery, flips with the arrow
+      // keys only (no buttons), closes with Escape.
+      customElements.define('shreddit-media-lightbox', class extends HTMLElement {});
+      document.addEventListener('click', (e) => {
+        const gallery = e.target.closest?.('gallery-carousel');
+        if (!gallery || e.composedPath()[0].localName === 'button') return;
+        const box = document.createElement('shreddit-media-lightbox');
+        box.id = 'lightbox';
+        box.dataset.index = '0';
+        box.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.9);color:#fff';
+        box.textContent = 'image 0';
+        document.body.append(box);
+      });
+      document.addEventListener('keydown', (e) => {
+        const box = document.getElementById('lightbox');
+        if (!box) return;
+        if (e.key === 'Escape') return box.remove();
+        const i = +box.dataset.index + (e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0);
+        if (i < 0 || i > 2 || i === +box.dataset.index) return;
+        box.dataset.index = String(i);
+        box.textContent = 'image ' + i;
+      });
       add(10);
       new IntersectionObserver((entries) => {
         if (entries.some((e) => e.isIntersecting) && n < 40) setTimeout(() => add(10), 200);

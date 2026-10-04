@@ -312,7 +312,7 @@
     spec?.code === e.code && !!spec.ctrl === e.ctrlKey && !!spec.alt === e.altKey && !!spec.shift === e.shiftKey && !!spec.meta === e.metaKey;
 
   listen(window, 'keydown', (e) => {
-    if (e.repeat || isTyping(e)) return;
+    if (!e.isTrusted || e.repeat || isTyping(e)) return; // untrusted: our own arrow key for image viewers
     const command =
       Object.entries(settings.pageKeys || {}).find(([, spec]) => matchesPageKey(spec, e))?.[0] ??
       pageShortcuts.find((c) => matchesShortcut(c.spec, e))?.name;
@@ -427,8 +427,21 @@
   // Gallery arrows in the open image viewer or the current post, visible ones first. Sites often
   // only show these while the mouse hovers the image, so hidden ones count too (with the mouse in
   // a game they are never visible).
+  // Reddit's full-screen image viewer (or any other big dialog on top of the page), if open.
+  function openViewer() {
+    const big = (el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > innerWidth * 0.5 && r.height > innerHeight * 0.5 && el.checkVisibility();
+    };
+    const candidates = [
+      ...document.querySelectorAll('[aria-modal="true"], dialog[open], [role="dialog"]'),
+      ...deepQueryAll(document, '*').filter((el) => el.localName.includes('lightbox') || el.matches('[aria-modal="true"], dialog[open]')),
+    ];
+    return candidates.filter(big).at(-1) ?? null;
+  }
+
   function imageButtons(dir) {
-    const scope = document.querySelector('[role="dialog"][aria-modal="true"]') ?? currentPost();
+    const scope = openViewer() ?? currentPost();
     if (!scope) return { scope: null, buttons: [] };
     const want = dir > 0 ? NEXT_IMAGE : PREV_IMAGE;
     const other = dir > 0 ? PREV_IMAGE : NEXT_IMAGE;
@@ -448,9 +461,21 @@
   // still be there on the last/first image, so "clicked" alone doesn't mean anything happened.
   async function flipImage(dir) {
     const { scope, buttons } = imageButtons(dir);
-    if (!buttons.length) return false;
-    const changed = watchForChange(scope);
-    buttons[0].click();
+    if (!scope) return false;
+    const viewer = scope === openViewer();
+    if (buttons.length) {
+      const changed = watchForChange(viewer ? document.documentElement : scope);
+      buttons[0].click();
+      if (await changed(400)) return true;
+    }
+    if (!viewer) return false;
+    // Image viewers flip with the arrow keys; send one (also needed when a page key took the real one).
+    const changed = watchForChange(document.documentElement);
+    const key = dir > 0 ? 'ArrowRight' : 'ArrowLeft';
+    const init = { key, code: key, keyCode: dir > 0 ? 39 : 37, which: dir > 0 ? 39 : 37, bubbles: true, composed: true, cancelable: true };
+    const target = scope.contains(document.activeElement) ? document.activeElement : scope;
+    target.dispatchEvent(new KeyboardEvent('keydown', init));
+    target.dispatchEvent(new KeyboardEvent('keyup', init));
     return changed(400);
   }
 
@@ -508,12 +533,12 @@
       }
       case 'next-image':
         // Last image (or no gallery): carry on to the next post so one key does both.
-        flipImage(1).then((moved) => moved || navigate(1));
+        flipImage(1).then((moved) => moved || (openViewer() ? hud.toast('Last image') : navigate(1)));
         if (auto) startCountdown();
         break;
       case 'previous-image':
         // First image (or no gallery): back to the previous post, mirroring next-image.
-        flipImage(-1).then((moved) => moved || navigate(-1));
+        flipImage(-1).then((moved) => moved || (openViewer() ? hud.toast('First image') : navigate(-1)));
         if (auto) startCountdown();
         break;
       case 'toggle-media-only':
