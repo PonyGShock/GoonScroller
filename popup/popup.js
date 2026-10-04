@@ -22,6 +22,7 @@ function render(state) {
 
 async function renderShortcuts() {
   const commands = await chrome.commands.getAll();
+  $('keysMissing').hidden = commands.some((c) => c.name === 'next-post' && c.shortcut);
   commands.sort((a, b) => COMMAND_ORDER.indexOf(a.name) - COMMAND_ORDER.indexOf(b.name));
   $('shortcuts').replaceChildren(
     ...commands.map((c) => {

@@ -166,6 +166,15 @@ kbd.unset {
   font-weight: 400;
 }
 
+.warn {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #3a1d24;
+  color: #ffd3db;
+  font-size: 12px;
+}
+
 .hint {
   margin: 8px 0 0;
   color: var(--muted);

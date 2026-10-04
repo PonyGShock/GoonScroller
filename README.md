@@ -59,6 +59,16 @@ The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't t
 3. To use other keys, click the pencil and press a new combination. It has to include Ctrl or
    Alt. Pick something your game doesn't use.
 
+### Hotkeys don't do anything?
+
+- Open the GoonScroller panel. If it says the hotkeys weren't assigned, or shows **not set**, click
+  **Change hotkeys…** and set them yourself. In Brave that page is `brave://extensions/shortcuts`.
+- Watch the GoonScroller icon when you press a hotkey. A pink **•** means the key arrived and was sent
+  to your Reddit/X tab. A grey **?** means the key arrived, but no Reddit/X tab is showing in any
+  window. No badge at all means the browser never got the key: check the shortcuts page and the
+  **Global** setting.
+- After changing shortcuts, restart the browser once. Global hotkeys are sometimes only registered on startup.
+
 ### Put it on a mouse button (recommended)
 
 Chrome can't bind mouse buttons itself, but your mouse software can. In Logitech G HUB,

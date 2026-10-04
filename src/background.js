@@ -34,8 +34,17 @@ async function handleCommand(command, hint) {
 }
 globalThis.handleCommand = handleCommand; // used by the tests
 
-chrome.commands.onCommand.addListener((command, tab) => {
-  handleCommand(command, tab);
+// Flash the toolbar badge so it's visible that a hotkey arrived: "•" = sent to a Reddit/X tab,
+// "?" = no Reddit/X tab is showing in any window.
+async function flashBadge(text) {
+  await chrome.action.setBadgeText({ text }).catch(() => {});
+  await chrome.action.setBadgeBackgroundColor({ color: text === '?' ? '#8b8f99' : '#ff4f6d' }).catch(() => {});
+  setTimeout(() => chrome.action.setBadgeText({ text: '' }).catch(() => {}), 1200);
+}
+
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  const result = await handleCommand(command, tab);
+  flashBadge(result ? '•' : '?');
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

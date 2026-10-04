@@ -228,6 +228,20 @@ await test('reddit: auto mode flips through gallery images before moving on', as
   await cmd('toggle-auto');
 });
 
+await test('reddit: pressing Ctrl+Shift+2 / Ctrl+Shift+1 in the page works', async () => {
+  await setSettings({ smooth: false });
+  await open('https://www.reddit.com/r/test/');
+  await page.keyboard.press('Control+Shift+Digit2');
+  await wait(700);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
+  await page.keyboard.press('Control+Shift+Digit2');
+  await wait(700);
+  assert.equal(await postAt('shreddit-post', 61), 'p2');
+  await page.keyboard.press('Control+Shift+Digit1');
+  await wait(700);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {
@@ -277,6 +291,7 @@ await test('popup renders with hotkeys listed', async () => {
   const keys = await popup.$$eval('#shortcuts li', (lis) => lis.map((li) => li.textContent));
   assert.ok(keys.some((k) => k.includes('Next post') && k.includes('Ctrl+Shift+2')), keys.join(' | '));
   assert.ok(keys.some((k) => k.includes('Next image') && k.includes('Ctrl+Shift+4')), keys.join(' | '));
+  assert.equal(await popup.isVisible('#keysMissing'), false);
   await popup.$eval('#delay', (s) => { s.value = s.max; s.dispatchEvent(new Event('input')); });
   assert.equal(await popup.textContent('#delayOut'), '5 min');
   assert.equal(await popup.textContent('#site'), 'Not on Reddit/X'); // the popup tab itself is active here

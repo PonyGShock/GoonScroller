@@ -283,6 +283,17 @@
 
   listen(window, 'wheel', onUserScroll, { passive: true, capture: true });
   listen(window, 'touchstart', onUserScroll, { passive: true, capture: true });
+  // Backup for when the browser didn't register the hotkeys (it then passes them to the page).
+  // Only works while the browser has focus; registered hotkeys never reach the page.
+  const FALLBACK_KEYS = { Digit1: 'previous-post', Digit2: 'next-post', Digit3: 'toggle-auto', Digit4: 'next-image' };
+  listen(window, 'keydown', (e) => {
+    const command = e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && FALLBACK_KEYS[e.code];
+    if (!command || e.repeat) return;
+    e.preventDefault();
+    e.stopPropagation();
+    ready.then(() => run(command));
+  }, { capture: true });
+
   listen(window, 'keydown', (e) => {
     if (SCROLL_KEYS.has(e.key) && !e.target.closest?.('input, textarea, [contenteditable]')) onUserScroll();
   }, { capture: true });
