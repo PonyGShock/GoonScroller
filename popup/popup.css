@@ -197,6 +197,8 @@ input[type='range'] {
 }
 
 kbd {
+  flex-shrink: 0;
+  white-space: nowrap;
   font: 600 11px ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color: var(--text);
 }

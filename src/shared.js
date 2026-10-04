@@ -7,6 +7,7 @@ globalThis.GoonShared = {
     pauseOnHover: true, // pause auto mode while the mouse is on the page
     waitForVideos: true, // let a playing video finish before moving on (capped at 30s)
     flipGalleries: true, // auto mode clicks through gallery images before moving on
+    autoplayVideos: true, // start the video in the post we land on (X often won't by itself)
     hud: true, // small on-screen indicator in the corner
     // Keys set in the panel that work on the page while the browser is focused, without Ctrl/Alt.
     // { command: { code, ctrl, alt, shift, meta } }
@@ -19,6 +20,8 @@ globalThis.GoonShared = {
     ['next-image', 'Next image'],
     ['previous-image', 'Previous image'],
     ['toggle-auto', 'Start / stop auto'],
+    ['upvote', 'Upvote / like'],
+    ['save', 'Save / bookmark'],
   ],
 
   formatKey(spec) {

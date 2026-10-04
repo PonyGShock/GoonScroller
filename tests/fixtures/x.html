@@ -45,14 +45,28 @@
             const media = n % 3 !== 1;
             h = media ? 300 + ((n * 61) % 300) : 120;
             cell.innerHTML = `<article id="t${n}" data-testid="tweet" style="height:${h}px">tweet ${n}${
-              media ? `<div data-testid="tweetPhoto" style="height:${h - 60}px"></div>` : ''
-            }</article>`;
+              media ? `<div data-testid="tweetPhoto" style="height:${h - 80}px"></div>` : ''
+            }${n === 2 ? '<video src="https://media.test/clip.webm" preload="auto" style="height:40px"></video>' : ''}${
+              n === 3 ? '<div data-testid="videoPlayer"><button data-testid="playButton" aria-label="Play">▶</button></div>' : ''
+            }<button data-testid="like">♥</button><button data-testid="bookmark">🔖</button></article>`;
           }
           list.append(cell);
           y += h;
         }
         list.style.height = y + 'px';
       }
+      document.addEventListener('click', (e) => {
+        const play = e.target.closest?.('[data-testid="playButton"]');
+        if (play) {
+          const v = Object.assign(document.createElement('video'), { src: 'https://media.test/clip.webm', muted: true });
+          play.replaceWith(v);
+          v.play();
+          return;
+        }
+        const b = e.target.closest?.('button[data-testid]');
+        const swap = { like: 'unlike', unlike: 'like', bookmark: 'removeBookmark', removeBookmark: 'bookmark' };
+        if (b && swap[b.dataset.testid]) b.dataset.testid = swap[b.dataset.testid];
+      });
       add(20);
       addEventListener('scroll', () => {
         if (n < 60 && scrollY + innerHeight > document.documentElement.scrollHeight - 200) add(10);

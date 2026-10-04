@@ -74,6 +74,63 @@
     },
   ];
 
+  // ------------------------------------------------------------------ upvote / like, save / bookmark
+
+  const labelOf = (el) => (el.getAttribute('aria-label') || el.textContent || '').trim();
+  const findIn = (root, selector, test) => deepQueryAll(root, selector).find(test) ?? null;
+  const BUTTONS = 'button, [role="button"], [role="menuitem"], a, li';
+  const SAVE_LABEL = /^(save|unsave|remove from saved|opslaan|niet meer opslaan|verwijderen uit opgeslagen)$/i;
+  const SAVED_LABEL = /unsave|remove|niet meer|verwijderen/i;
+
+  // Each returns { el, on } for the post: the control to click and whether it's already active.
+  const ACTIONS = {
+    X: {
+      upvote: (post) => {
+        const el = post.querySelector('[data-testid="like"], [data-testid="unlike"]');
+        return el && { el, on: el.dataset.testid === 'unlike', words: ['Liked', 'Like removed'] };
+      },
+      save: (post) => {
+        const el = post.querySelector('[data-testid="bookmark"], [data-testid="removeBookmark"]');
+        return el && { el, on: el.dataset.testid === 'removeBookmark', words: ['Bookmarked', 'Bookmark removed'] };
+      },
+    },
+    Reddit: {
+      upvote: (post) => {
+        const words = ['Upvoted', 'Upvote removed'];
+        const old = post.querySelector('.midcol .arrow.up, .midcol .arrow.upmod');
+        if (old) return { el: old, on: old.classList.contains('upmod'), words };
+        const el = findIn(post, 'button', (b) => b.hasAttribute('upvote') || /^(upvote|stem omhoog)/i.test(b.getAttribute('aria-label') || ''));
+        return el && { el, on: el.getAttribute('aria-pressed') === 'true', words };
+      },
+      save: async (post) => {
+        const words = ['Saved', 'Unsaved'];
+        const old = post.querySelector('.save-button a, a.save-button');
+        if (old) return { el: old, on: /unsave/i.test(old.textContent), words };
+        // New Reddit keeps "Save" in the post's "…" menu, which may need opening first.
+        const find = (root) => findIn(root, BUTTONS, (b) => SAVE_LABEL.test(labelOf(b)));
+        let el = find(post);
+        if (!el) {
+          const menu = findIn(post, 'button', (b) => /overflow|more options|meer opties|open user actions/i.test(b.getAttribute('aria-label') || ''));
+          if (!menu) return null;
+          menu.click();
+          for (let i = 0; i < 10 && !el; i++) {
+            await sleep(100);
+            el = find(post) ?? find(document);
+          }
+        }
+        return el && { el, on: SAVED_LABEL.test(labelOf(el)), words };
+      },
+    },
+  };
+
+  async function postAction(kind) {
+    const post = currentPost();
+    const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
+    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : 'No save button found');
+    control.el.click();
+    hud.toast(control.on ? control.words[1] : control.words[0]);
+  }
+
   const site = SITES.find((s) => s.host.test(location.hostname)) ?? null;
 
   // ------------------------------------------------------------------ state
@@ -196,6 +253,7 @@
 
   function scrollToPost(post, anchor) {
     const token = ++navToken;
+    pauseStartedVideos();
     cursor = post.el;
     videoExtended = false;
     const top = clamp(post.top - anchor, 0, Math.max(0, maxScroll()));
@@ -211,8 +269,43 @@
     inFlight = false;
     arrivedAt = Date.now();
     realign(el);
+    autoplay(el, token);
     await sleep(500); // images finishing loading can still shift things a bit
     if (token === navToken) realign(el);
+  }
+
+  // ------------------------------------------------------------------ autoplay
+
+  let startedVideos = [];
+  const PLAY_BUTTON = /^(play|play video|afspelen|video afspelen)$/i;
+
+  // Start the video in the post we landed on. X only autoplays with its own setting on, and often
+  // not in a window without focus. Retries briefly because players load lazily.
+  async function autoplay(post, token) {
+    if (!settings.autoplayVideos) return;
+    for (let attempt = 0; attempt < 8 && token === navToken; attempt++) {
+      const videos = deepQueryAll(post, 'video');
+      if (videos.some((v) => !v.paused && !v.ended)) return; // the site started it
+      const video = videos.find((v) => !v.ended);
+      if (video) {
+        // Blocked with sound until the page has been clicked once; muted is always allowed.
+        await video.play().catch(() => {
+          video.muted = true;
+          return video.play().catch(() => {});
+        });
+        if (!video.paused) return void startedVideos.push(video);
+      } else if (attempt % 3 === 0) {
+        const button = findIn(post, 'button, [role="button"], [data-testid="playButton"]', (b) =>
+          b.dataset.testid === 'playButton' || PLAY_BUTTON.test(b.getAttribute('aria-label') || ''));
+        button?.click();
+      }
+      await sleep(250);
+    }
+  }
+
+  function pauseStartedVideos() {
+    for (const v of startedVideos) if (!v.paused) v.pause();
+    startedVideos = [];
   }
 
   function realign(el) {
@@ -540,6 +633,10 @@
         // First image (or no gallery): back to the previous post, mirroring next-image.
         flipImage(-1).then((moved) => moved || (openViewer() ? hud.toast('First image') : navigate(-1)));
         if (auto) startCountdown();
+        break;
+      case 'upvote':
+      case 'save':
+        postAction(command);
         break;
       case 'toggle-media-only':
         saveSetting({ mediaOnly: !settings.mediaOnly });

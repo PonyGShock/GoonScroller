@@ -18,6 +18,9 @@ has focus.
   - pauses while your mouse is on the page, and carries on when the mouse leaves,
   - lets a playing video finish first (up to 30s),
   - loads more posts when the feed runs out, and goes to the next page on old.reddit.
+- **Upvote / like** and **save / bookmark** the post you're on, with a hotkey.
+- **Autoplay videos**: starts the video in the post you land on (X often won't by itself) and
+  pauses it when you move on.
 - **Global hotkeys** that work while you're in a game.
 - A **small indicator** in the bottom-right corner with the auto-scroll countdown. You can turn it off.
 - Pages with no posts to snap to, such as X's media grid, scroll one screen at a time.
@@ -46,8 +49,11 @@ Reddit/X tabs that are already open work straight away, without a reload.
 | Start / stop auto-scroll       | `Ctrl+Shift+3`  | `⌘⇧9` |
 | Shorter / longer auto delay    | not set         |       |
 | Toggle "images & videos only"  | not set         |       |
+| Upvote (Reddit) / like (X)     | not set         |       |
+| Save (Reddit) / bookmark (X)   | not set         |       |
 
 The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't the focused window.
+The ones marked "not set" can be given a key on the shortcuts page (below) or as a page key in the panel.
 
 ### Make them work while you're in a game
 
@@ -97,6 +103,7 @@ Click the toolbar icon:
 - **Auto-scroll flips through galleries**
 - **Only stop on images & videos**
 - **Pause while mouse is on the page**
+- **Autoplay videos**
 - **Let videos finish** (up to 30s)
 - **Smooth scrolling**
 - **Show indicator in the corner**
@@ -110,6 +117,8 @@ your account. Otherwise every post waits for a click.
   **Display media that may contain sensitive content**.
 - **Reddit:** Settings → Preferences → turn on **Show mature content (I'm over 18)** and turn off
   **Blur mature (18+) images and media**.
+- **X videos:** GoonScroller's **Autoplay videos** option starts them for you. X's own switch is
+  under Settings → Accessibility, display, and languages → Data usage → **Autoplay**.
 
 ## Good to know
 
