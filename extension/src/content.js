@@ -8,7 +8,7 @@
   if (previous?.alive()) return;
   previous?.destroy();
 
-  const { DEFAULTS, DELAY_STEPS, nearestStep } = globalThis.GoonShared;
+  const { DEFAULTS, DELAY_STEPS, nearestStep, formatDelay } = globalThis.GoonShared;
 
   const TOL = 6; // px a post must sit past the current position to count as the next one
   const SNAP = 30; // px within which the post we last scrolled to still counts as "current"
@@ -16,6 +16,9 @@
   const MAX_VIDEO_WAIT = 30000; // ms, cap for "wait for videos"
   const HOVER_STALE = 60000; // ms without mouse movement before hovering stops pausing auto mode
   const RESUME_KEY = 'goonscroller:resume-auto';
+  // Gallery arrows are matched by their (possibly translated) label, or by a slot name.
+  const NEXT_IMAGE = /\b(next|volgende|weiter|nächste|suivant|siguiente|próximo|successiv)/i;
+  const PREV_IMAGE = /\b(prev|previous|vorige|zurück|vorherige|précédent|anterior|back)/i;
   const SCROLL_KEYS = new Set([' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'j', 'k']);
 
   // ------------------------------------------------------------------ sites
@@ -298,11 +301,11 @@
       hud.hidePill();
       return hud.toast('Auto-scroll off');
     }
-    hud.toast(`Auto-scroll on · every ${settings.delay}s`);
+    hud.toast(`Auto-scroll on · every ${formatDelay(settings.delay)}`);
     startCountdown();
   }
 
-  function startCountdown(ms = settings.delay * 1000, label = `Auto · ${settings.delay}s`) {
+  function startCountdown(ms = settings.delay * 1000, label = `Auto · ${formatDelay(settings.delay)}`) {
     clearTimeout(autoTimer);
     if (!auto) return;
     pausedByMouse = false;
@@ -319,6 +322,7 @@
       videoExtended = true;
       return startCountdown(wait, 'Waiting for video…');
     }
+    if (settings.flipGalleries && flipImage(1)) return startCountdown();
     await navigate(1);
     startCountdown();
   }
@@ -366,6 +370,45 @@
     return remaining > 500 && budget > 500 ? Math.min(remaining + 300, budget) : 0;
   }
 
+  // ------------------------------------------------------------------ gallery images
+
+  // The post being looked at: the one we scrolled to if it's still on screen, otherwise the one
+  // at the anchor line.
+  function currentPost() {
+    if (cursor?.isConnected) {
+      const r = cursor.getBoundingClientRect();
+      if (r.bottom > 0 && r.top < innerHeight) return cursor;
+    }
+    const posts = collectPosts();
+    if (!posts.length) return null;
+    const anchor = anchorAt(posts[0].rect) + TOL;
+    return (posts.findLast((p) => p.rect.top <= anchor) ?? posts[0]).el;
+  }
+
+  // The gallery arrow in the open image viewer or the current post, if there is a next/previous image.
+  function imageButton(dir) {
+    const scope = document.querySelector('[role="dialog"][aria-modal="true"]') ?? currentPost();
+    if (!scope) return null;
+    const want = dir > 0 ? NEXT_IMAGE : PREV_IMAGE;
+    const other = dir > 0 ? PREV_IMAGE : NEXT_IMAGE;
+    return deepQueryAll(scope, 'button, [role="button"]').find((b) => {
+      const label = [b.getAttribute('aria-label'), b.title, b.getAttribute('slot'), b.parentElement?.getAttribute('slot')]
+        .filter(Boolean)
+        .join(' ');
+      if (!want.test(label) || other.test(label) || /post|comment|reply|repl/i.test(label)) return false;
+      if (b.disabled || b.getAttribute('aria-disabled') === 'true') return false;
+      const r = b.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && b.checkVisibility({ visibilityProperty: true });
+    }) ?? null;
+  }
+
+  function flipImage(dir) {
+    const button = imageButton(dir);
+    if (!button) return false;
+    button.click();
+    return true;
+  }
+
   function deepQueryAll(root, selector, out = []) {
     out.push(...root.querySelectorAll(selector));
     for (const el of root.querySelectorAll('*')) if (el.shadowRoot) deepQueryAll(el.shadowRoot, selector, out);
@@ -390,10 +433,19 @@
         const i = nearestStep(settings.delay) + (command === 'faster' ? -1 : 1);
         const delay = DELAY_STEPS[clamp(i, 0, DELAY_STEPS.length - 1)];
         saveSetting({ delay });
-        hud.toast(`Auto-scroll delay: ${delay}s`);
+        hud.toast(`Auto-scroll delay: ${formatDelay(delay)}`);
         if (auto) startCountdown();
         break;
       }
+      case 'next-image':
+        // Last image (or no gallery): carry on to the next post so one key does both.
+        if (!flipImage(1)) navigate(1);
+        if (auto) startCountdown();
+        break;
+      case 'previous-image':
+        if (!flipImage(-1)) hud.toast('No previous image');
+        if (auto) startCountdown();
+        break;
       case 'toggle-media-only':
         saveSetting({ mediaOnly: !settings.mediaOnly });
         hud.toast(`Images & videos only: ${settings.mediaOnly ? 'on' : 'off'}`);

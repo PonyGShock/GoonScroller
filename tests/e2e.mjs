@@ -193,6 +193,41 @@ await test('reddit: auto mode lets a playing video finish', async () => {
   await cmd('toggle-auto');
 });
 
+await test('reddit: next-image clicks through a gallery, then moves to the next post', async () => {
+  await setSettings({ smooth: false, delay: 6 });
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2 is a 3-image gallery
+  await wait(700);
+  const index = () => page.evaluate(() => document.querySelector('#p2 gallery-carousel').dataset.index);
+  await cmd('next-image');
+  assert.equal(await index(), '1');
+  await cmd('next-image');
+  assert.equal(await index(), '2');
+  await cmd('previous-image');
+  assert.equal(await index(), '1');
+  await cmd('next-image');
+  await cmd('next-image'); // last image: on to the next post
+  await wait(700);
+  assert.equal(await postAt('shreddit-post', 61), 'p4');
+});
+
+await test('reddit: auto mode flips through gallery images before moving on', async () => {
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post');
+  await cmd('next-post'); // p2
+  await wait(700);
+  await setSettings({ delay: 1 });
+  await cmd('toggle-auto');
+  await wait(1400);
+  assert.equal(await postAt('shreddit-post', 61), 'p2');
+  await wait(1000);
+  assert.equal(await page.evaluate(() => document.querySelector('#p2 gallery-carousel').dataset.index), '2');
+  await wait(1200);
+  assert.equal(await postAt('shreddit-post', 61), 'p4');
+  await cmd('toggle-auto');
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {
@@ -241,6 +276,9 @@ await test('popup renders with hotkeys listed', async () => {
   await wait(500);
   const keys = await popup.$$eval('#shortcuts li', (lis) => lis.map((li) => li.textContent));
   assert.ok(keys.some((k) => k.includes('Next post') && k.includes('Ctrl+Shift+2')), keys.join(' | '));
+  assert.ok(keys.some((k) => k.includes('Next image') && k.includes('Ctrl+Shift+4')), keys.join(' | '));
+  await popup.$eval('#delay', (s) => { s.value = s.max; s.dispatchEvent(new Event('input')); });
+  assert.equal(await popup.textContent('#delayOut'), '5 min');
   assert.equal(await popup.textContent('#site'), 'Not on Reddit/X'); // the popup tab itself is active here
   if (process.env.SCREENSHOT) await popup.screenshot({ path: process.env.SCREENSHOT });
   assert.deepEqual(popupErrors, []);

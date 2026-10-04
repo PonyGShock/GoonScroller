@@ -11,7 +11,10 @@ has focus.
   time. This works on new Reddit, old.reddit and X/Twitter.
 - **Images & videos only** (on by default). Text-only posts, plain links, Reddit ads and X's
   "Who to follow" boxes are skipped.
-- **Auto-scroll.** It moves to the next post every 1–60 seconds. It also:
+- **Next image.** On a gallery post, a hotkey clicks the gallery's "next" arrow. After the last
+  image it moves on to the next post, so one key does both.
+- **Auto-scroll.** It moves to the next post every 1 second to 5 minutes. It also:
+  - flips through all images of a gallery first,
   - pauses while your mouse is on the page, and carries on when the mouse leaves,
   - lets a playing video finish first (up to 30s),
   - loads more posts when the feed runs out, and goes to the next page on old.reddit.
@@ -38,6 +41,8 @@ Reddit/X tabs that are already open work straight away, without a reload.
 | ------------------------------ | --------------- | ----- |
 | Previous post                  | `Ctrl+Shift+1`  | `⌘⇧7` |
 | Next post                      | `Ctrl+Shift+2`  | `⌘⇧8` |
+| Next image (gallery)           | `Ctrl+Shift+4`  | `⌘⇧0` |
+| Previous image (gallery)       | not set         |       |
 | Start / stop auto-scroll       | `Ctrl+Shift+3`  | `⌘⇧9` |
 | Shorter / longer auto delay    | not set         |       |
 | Toggle "images & videos only"  | not set         |       |
@@ -64,7 +69,8 @@ Bind another button to **Ctrl+Shift+3** to start and stop auto-scroll.
 Click the toolbar icon:
 
 - **Prev / Auto / Next** buttons
-- **Auto-scroll delay**, 1–60 seconds per post
+- **Auto-scroll delay**, 1 second to 5 minutes per post (or per gallery image)
+- **Auto-scroll flips through galleries**
 - **Only stop on images & videos**
 - **Pause while mouse is on the page**
 - **Let videos finish** (up to 30s)

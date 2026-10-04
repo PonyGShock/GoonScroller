@@ -64,6 +64,18 @@
       "description": "Previous post",
       "global": true
     },
+    "next-image": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+4",
+        "mac": "Command+Shift+0"
+      },
+      "description": "Next image in a gallery (or next post after the last one)",
+      "global": true
+    },
+    "previous-image": {
+      "description": "Previous image in a gallery",
+      "global": true
+    },
     "toggle-auto": {
       "suggested_key": {
         "default": "Ctrl+Shift+3",

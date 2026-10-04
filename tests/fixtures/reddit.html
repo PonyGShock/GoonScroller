@@ -33,7 +33,9 @@
           p.setAttribute('post-type', type === 'image' || type === 'video' || type === 'gallery' ? (n % 10 === 4 ? 'link' : type) : type);
           p.innerHTML =
             `<h3>post ${n} (${type})</h3>` +
-            (type === 'image' || type === 'gallery'
+            (type === 'gallery'
+              ? `<div slot="post-media-container"><gallery-carousel style="display:block;height:${h}px;background:#a3c"></gallery-carousel></div>`
+              : type === 'image'
               ? `<div slot="post-media-container"><div class="media" style="height:${h}px"></div></div>`
               : type === 'video'
                 ? `<shreddit-player style="display:block;height:${h}px;background:#333"></shreddit-player>`
@@ -41,6 +43,26 @@
           feed.append(p);
         }
       }
+      // Like Reddit's carousel: 3 images, arrows in a shadow root, the next arrow gone on the last image.
+      customElements.define('gallery-carousel', class extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) return;
+          const root = this.attachShadow({ mode: 'open' });
+          root.innerHTML = `<style>button{position:absolute;top:45%;width:32px;height:32px;border-radius:50%}</style>
+            <button aria-label="Previous page" style="left:8px">&lt;</button>
+            <button aria-label="Next page" style="right:8px">&gt;</button>`;
+          this.style.position = 'relative';
+          this.dataset.index = '0';
+          const [prev, next] = root.querySelectorAll('button');
+          const show = () => {
+            prev.style.display = this.dataset.index === '0' ? 'none' : '';
+            next.style.display = this.dataset.index === '2' ? 'none' : '';
+          };
+          prev.onclick = () => { this.dataset.index = String(+this.dataset.index - 1); show(); };
+          next.onclick = () => { this.dataset.index = String(+this.dataset.index + 1); show(); };
+          show();
+        }
+      });
       add(10);
       new IntersectionObserver((entries) => {
         if (entries.some((e) => e.isIntersecting) && n < 40) setTimeout(() => add(10), 200);

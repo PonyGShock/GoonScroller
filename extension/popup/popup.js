@@ -1,7 +1,7 @@
-const { DEFAULTS, DELAY_STEPS, nearestStep } = globalThis.GoonShared;
+const { DEFAULTS, DELAY_STEPS, nearestStep, formatDelay } = globalThis.GoonShared;
 const $ = (id) => document.getElementById(id);
 
-const COMMAND_ORDER = ['next-post', 'previous-post', 'toggle-auto', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
+const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
 
 let tabId = null;
 
@@ -49,7 +49,8 @@ async function init() {
   }
 
   const slider = $('delay');
-  const showDelay = () => ($('delayOut').textContent = `${DELAY_STEPS[slider.value]}s`);
+  const showDelay = () => ($('delayOut').textContent = formatDelay(DELAY_STEPS[slider.value]));
+  slider.max = DELAY_STEPS.length - 1;
   slider.value = nearestStep(settings.delay);
   showDelay();
   slider.addEventListener('input', showDelay);
