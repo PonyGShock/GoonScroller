@@ -450,11 +450,13 @@
     for (const iframe of deepQueryAll(post, 'iframe')) {
       const win = iframe.contentWindow;
       if (!win) continue;
-      win.postMessage({ goonscroller: what }, '*');
-      for (let i = 0; i < win.length; i++) win[i].postMessage({ goonscroller: what }, '*');
+      // Only "play"/"pause", and only to redgifs embeds (directly or one frame deeper).
+      const targets = [win, ...Array.from({ length: win.length }, (_, i) => win[i])];
+      for (const target of targets) for (const origin of REDGIFS) target.postMessage({ goonscroller: what }, origin);
     }
   }
 
+  const REDGIFS = ['https://www.redgifs.com', 'https://redgifs.com'];
   let startedFramePosts = [];
   let lastVideoTime = 0; // video position at the previous check, to notice a loop restarting
   let videoDueAt = 0; // when the current post's video should have played through

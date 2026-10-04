@@ -19,8 +19,9 @@ request Reddit's own Save button makes. Nothing is sent anywhere else.
 
 - *Access to reddit.com, x.com, twitter.com:* to find and scroll to posts, and to flip galleries,
   play videos, upvote/like and save when you ask.
-- *Access to redgifs.com:* only inside redgifs videos embedded in Reddit posts, to see how long the
-  video is and to start/pause it.
+- *Access to redgifs.com:* only inside redgifs videos embedded in Reddit or X pages, to see how long
+  the video is and to start/pause it. The helper only talks to that Reddit/X page, and only
+  exchanges the video's length and position and "play"/"pause".
 - *storage:* to remember your settings.
 - *scripting:* so it works in Reddit/X tabs that were already open when you installed it.
 

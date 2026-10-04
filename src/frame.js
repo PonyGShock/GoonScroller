@@ -3,6 +3,9 @@
 // plays/pauses it on request. Only does anything inside an iframe.
 (() => {
   if (window === window.top || window.__goonFrame) return;
+  // Only help when the embed sits on Reddit or X, and only talk to that page.
+  const host = [...(location.ancestorOrigins || [])].at(-1) || '';
+  if (!/^https:\/\/([a-z0-9-]+\.)*(reddit|x|twitter)\.com$/.test(host)) return;
   window.__goonFrame = true;
 
   const video = () =>
@@ -21,7 +24,7 @@
         loop: v.loop,
         playbackRate: v.playbackRate,
       },
-      '*',
+      host,
     );
   }, 500);
 
