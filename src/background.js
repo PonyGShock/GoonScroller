@@ -82,6 +82,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch(() => sendResponse(null));
     return true;
   }
+  if (msg?.type === 'save-report' && Array.isArray(msg.lines)) {
+    chrome.storage.session.set({ lastSave: { lines: msg.lines.slice(0, 30), at: msg.at } }).catch(() => {});
+    return;
+  }
   if (msg?.type === 'get-shortcuts') {
     chrome.commands.getAll().then(
       (cmds) => sendResponse(cmds.filter((c) => c.shortcut && c.name !== '_execute_action')),

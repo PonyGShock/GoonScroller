@@ -111,6 +111,12 @@ The panel also has **◀ Image / Image ▶** buttons for galleries.
   **Global** setting.
 - After changing shortcuts, restart the browser once. Global hotkeys are sometimes only registered on startup.
 
+### Saving on Reddit doesn't work?
+
+Open the GoonScroller panel: under **Last Reddit save** it shows what the last save attempt tried
+and why each way failed (it never contains login data). **Copy report** and include it when you
+report the problem.
+
 ### Put it on a mouse button (recommended)
 
 Chrome can't bind mouse buttons itself, but your mouse software can. In Logitech G HUB,

@@ -455,11 +455,22 @@ await test('reddit: upvote, and save via the API or the "…" menu', async () =>
   await cmd('save');
   await wait(800);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), '1');
-  await wait(800);
+  await wait(1600); // cooldown after a save that worked
   await cmd('save');
-  await wait(800);
+  await wait(2000);
   assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
   assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('ul').children.length), 0, 'menu closed');
+  const report = () => sw.evaluate(async () => (await chrome.storage.session.get('lastSave')).lastSave?.lines.join('\n') ?? '');
+  assert.match(await report(), /old login: not available[\s\S]*new login: token_v2 cookie not readable[\s\S]*menu: clicking[\s\S]*result: Unsaved/);
+
+  // A menu that ignores the extension's clicks: no fake "Saved", and the report says why.
+  await page.evaluate(() => (window.ignoreScriptClicks = true));
+  await wait(1600);
+  await cmd('save');
+  await wait(2500);
+  assert.equal(await page.getAttribute('#p2', 'data-saved'), null);
+  assert.match(await report(), /didn't change, so Reddit ignored the click[\s\S]*result: not saved/);
+  assert.equal(await page.evaluate(() => document.querySelector('#p2').shadowRoot.querySelector('ul').children.length), 0, 'menu closed again');
   redditApi.loggedIn = true;
 });
 

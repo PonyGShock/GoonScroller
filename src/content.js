@@ -106,10 +106,14 @@
         const old = post.querySelector('.save-button a, a.save-button');
         if (old) return { el: old, on: /unsave/i.test(old.textContent), words };
         // New Reddit: save through Reddit's own API (no menu, works in any language); the "…" menu
-        // is only the fallback.
-        const message = await redditApiSave(post).catch(() => null);
-        if (message) return { message };
-        return saveViaMenu(post, words);
+        // is only the fallback. Each step is written to the save report shown in the panel.
+        saveReport = [`post ${post.getAttribute('id') || '(no id)'}`];
+        const message =
+          (await redditApiSave(post).catch((e) => (note(`API error: ${e?.message || e}`), null))) ??
+          (await saveViaMenu(post).catch((e) => (note(`menu error: ${e?.message || e}`), null)));
+        note(message ? `result: ${message}` : 'result: not saved');
+        notify({ type: 'save-report', lines: saveReport, at: Date.now() });
+        return message ? { message } : null;
       },
     },
   };
@@ -232,7 +236,10 @@
     const last = lastAction[kind];
     if (post && last?.post === post && Date.now() - last.at < ACTION_COOLDOWN) return hud.toast('Wait a moment…');
     const control = post && (await ACTIONS[site?.name]?.[kind]?.(post));
-    if (!control) return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : "Couldn't save this post");
+    if (!control) {
+      const why = site?.name === 'Reddit' ? " · details in the GoonScroller panel" : '';
+      return hud.toast(kind === 'upvote' ? 'No upvote/like button found' : `Couldn't save this post${why}`);
+    }
     lastAction[kind] = { post, at: Date.now() }; // only a press that did something starts the cooldown
     if (control.message) return hud.toast(control.message);
     realClick(control.el);
@@ -244,6 +251,19 @@
   // Two kinds of Reddit login exist: the older session (works with a "modhash") and the newer one
   // (a token_v2 cookie, used with Reddit's OAuth API). Each attempt checks afterwards that the post
   // really changed, because Reddit can answer "OK" without saving.
+  // What each save attempt did, for the "Last Reddit save" report in the panel. Only describes
+  // steps and page elements; never contains login data.
+  let saveReport = [];
+  const note = (line) => saveReport.push(line);
+  const describe = (el) => {
+    const attrs = ['role', 'aria-label', 'icon-name', 'slot', 'data-testid']
+      .filter((a) => el.getAttribute?.(a))
+      .map((a) => `${a}="${el.getAttribute(a).slice(0, 40)}"`)
+      .join(' ');
+    const text = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    return `<${el.localName}${attrs ? ` ${attrs}` : ''}>${text ? ` "${text}"` : ''}`;
+  };
+
   let modhash = null;
   async function redditApiSave(post) {
     const raw = [post.getAttribute('id'), post.getAttribute('post-id'), post.getAttribute('thingid'), post.dataset.fullname]
@@ -258,9 +278,15 @@
   async function legacySave(id) {
     const json = async (url) => (await fetch(url, { credentials: 'include' })).json();
     modhash ??= (await json('/api/me.json'))?.data?.modhash || null;
-    if (!modhash) return null;
+    if (!modhash) {
+      note('old login: not available (no modhash)');
+      return null;
+    }
     const before = savedState(await json(`/api/info.json?id=${id}`));
-    if (typeof before !== 'boolean') return null;
+    if (typeof before !== 'boolean') {
+      note("old login: couldn't read the post's saved state");
+      return null;
+    }
     const res = await fetch(before ? '/api/unsave' : '/api/save', {
       method: 'POST',
       credentials: 'include',
@@ -269,54 +295,113 @@
     });
     const after = res.ok ? savedState(await json(`/api/info.json?id=${id}`)) : before;
     if (after === before) {
+      note(`old login: Reddit answered ${res.status} but the post didn't change`);
       modhash = null; // may have expired or not apply to this login; fetch a fresh one next time
       return null;
     }
+    note('old login: worked');
     return after ? 'Saved' : 'Unsaved';
   }
 
   async function oauthSave(id) {
     const token = document.cookie.match(/(?:^|;\s*)token_v2=([^;]+)/)?.[1];
-    if (!token) return null;
+    if (!token) {
+      note('new login: token_v2 cookie not readable');
+      return null;
+    }
     // Sent from the background worker: the page itself isn't allowed to call oauth.reddit.com.
     const call = (method, path, body) => chrome.runtime.sendMessage({ type: 'reddit-oauth', method, path, body, token });
-    const before = savedState((await call('GET', `/api/info?id=${id}`))?.json);
-    if (typeof before !== 'boolean') return null;
+    const info = await call('GET', `/api/info?id=${id}`);
+    const before = savedState(info?.json);
+    if (typeof before !== 'boolean') {
+      note(`new login: reading the post failed (${info?.status ?? 'no answer'})`);
+      return null;
+    }
     const res = await call('POST', before ? '/api/unsave' : '/api/save', `id=${encodeURIComponent(id)}`);
-    if (!res?.ok) return null;
+    if (!res?.ok) {
+      note(`new login: save request failed (${res?.status ?? 'no answer'})`);
+      return null;
+    }
     const after = savedState((await call('GET', `/api/info?id=${id}`))?.json);
-    return after === before || typeof after !== 'boolean' ? null : after ? 'Saved' : 'Unsaved';
+    if (after === before || typeof after !== 'boolean') {
+      note("new login: Reddit answered OK but the post didn't change");
+      return null;
+    }
+    note('new login: worked');
+    return after ? 'Saved' : 'Unsaved';
   }
 
   // Fallback: open the post's "…" menu and click Save. Found by Reddit's icon names
   // ("overflow-horizontal", "save") so it doesn't depend on the language; labels as a backup.
-  async function saveViaMenu(post, words) {
+  // Afterwards the menu is checked again: only a Save item that actually changed counts.
+  async function saveViaMenu(post) {
     const itemOf = (el) => el.closest('[role="menuitem"], button, a') ?? el.closest('li');
+    const shown = (el) => el.getBoundingClientRect().height > 0;
     const find = (root) => {
-      const icon = deepQueryAll(root, '[icon-name^="save"], [icon-name^="unsave"]').map(itemOf).find(Boolean);
-      if (icon) return icon;
-      const hits = deepQueryAll(root, BUTTONS).filter((b) => SAVE_LABEL.test(labelOf(b)));
-      return hits.find((h) => !hits.some((o) => o !== h && h.contains(o))) ?? null;
+      const byIcon = deepQueryAll(root, '[icon-name^="save"], [icon-name^="unsave"]').map(itemOf).filter(Boolean);
+      const labels = deepQueryAll(root, BUTTONS).filter((b) => SAVE_LABEL.test(labelOf(b)));
+      const byLabel = labels.filter((h) => !labels.some((o) => o !== h && h.contains(o)));
+      return [...byIcon, ...byLabel].find(shown) ?? null;
     };
-    let el = find(post);
-    if (!el) {
-      const trigger =
-        deepQueryAll(post, '[icon-name^="overflow"]').map((i) => i.closest('button, [role="button"]')).find(Boolean) ??
-        deepQueryAll(post, '*').filter((x) => x.localName.includes('overflow-menu')).flatMap((x) => deepQueryAll(x, 'button'))[0] ??
-        findIn(post, 'button', (b) => /overflow|more|opties|acties|actions/i.test(b.getAttribute('aria-label') || ''));
-      if (!trigger) return null;
-      realClick(trigger);
-      for (let i = 0; i < 30 && !el; i++) {
+    const trigger = () =>
+      deepQueryAll(post, '[icon-name^="overflow"]').map((i) => i.closest('button, [role="button"]')).find(Boolean) ??
+      deepQueryAll(post, '*').filter((x) => x.localName.includes('overflow-menu')).flatMap((x) => deepQueryAll(x, 'button'))[0] ??
+      findIn(post, 'button', (b) => /overflow|more|opties|acties|actions/i.test(b.getAttribute('aria-label') || ''));
+    const openMenu = async () => {
+      const t = trigger();
+      if (!t) return { t: null, el: null };
+      realClick(t);
+      for (let i = 0; i < 30; i++) {
         await sleep(100);
-        el = find(post) ?? find(document);
+        const el = find(post) ?? find(document);
+        if (el) return { t, el };
       }
+      return { t, el: null };
+    };
+    const savedNow = (el) => {
+      const icon = deepQueryAll(el, '[icon-name]')[0]?.getAttribute('icon-name') || '';
+      return /unsave|fill/i.test(icon) || SAVED_LABEL.test(labelOf(el));
+    };
+    const menuItems = () =>
+      deepQueryAll(document, '[role="menuitem"]').filter(shown).slice(0, 10).map(describe).join(', ') || 'none';
+
+    let el = find(post);
+    let opener = null;
+    if (!el) {
+      const t = trigger();
+      if (!t) {
+        note('menu: the "…" button was not found in the post');
+        return null;
+      }
+      note(`menu: opening ${describe(t)}`);
+      ({ t: opener, el } = await openMenu());
       if (!el) {
-        realClick(trigger); // close the menu again
+        note(`menu: no Save item appeared. Menu items seen: ${menuItems()}`);
+        if (opener) realClick(opener); // close it again
         return null;
       }
     }
-    const icon = deepQueryAll(el, '[icon-name]')[0]?.getAttribute('icon-name') || '';
-    return { el, on: /unsave|fill/i.test(icon) || SAVED_LABEL.test(labelOf(el)), words };
+    const before = savedNow(el);
+    note(`menu: clicking ${describe(el)}`);
+    realClick(el);
+    await sleep(700);
+
+    // Check the result: look at the Save item again, re-opening the menu if it closed.
+    let again = find(post) ?? find(document);
+    let reopened = null;
+    if (!again) ({ t: reopened, el: again } = await openMenu());
+    const after = again ? savedNow(again) : undefined;
+    if (reopened) realClick(reopened); // close the menu we opened to check
+    else if (opener && again) realClick(opener);
+    if (after === undefined) {
+      note("menu: couldn't find the Save item again to check");
+      return null;
+    }
+    if (after === before) {
+      note("menu: the Save item didn't change, so Reddit ignored the click");
+      return null;
+    }
+    return after ? 'Saved' : 'Unsaved';
   }
 
   const site = SITES.find((s) => s.host.test(location.hostname)) ?? null;

@@ -89,6 +89,13 @@ async function renderShortcuts() {
   );
 }
 
+async function renderSaveReport() {
+  const { lastSave } = await chrome.storage.session.get('lastSave').catch(() => ({}));
+  $('saveReport').hidden = !lastSave;
+  if (!lastSave) return;
+  $('saveReportText').textContent = [new Date(lastSave.at).toLocaleTimeString(), ...lastSave.lines].join('\n');
+}
+
 async function renderLastHotkey() {
   const { lastHotkey: last } = await chrome.storage.session.get('lastHotkey').catch(() => ({}));
   if (!last) {
@@ -148,7 +155,15 @@ async function init() {
 
   renderShortcuts().catch(() => {});
   renderLastHotkey();
-  chrome.storage.session.onChanged.addListener(renderLastHotkey);
+  renderSaveReport();
+  chrome.storage.session.onChanged.addListener(() => {
+    renderLastHotkey();
+    renderSaveReport();
+  });
+  $('copyReport').addEventListener('click', async () => {
+    await navigator.clipboard.writeText($('saveReportText').textContent).catch(() => {});
+    $('copyReport').textContent = 'Copied ✓';
+  });
   render(await send(null));
 }
 

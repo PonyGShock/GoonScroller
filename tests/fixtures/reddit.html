@@ -105,7 +105,8 @@
             menu.innerHTML = `<li><div role="menuitem" tabindex="-1"><svg icon-name="${saved ? 'save-fill' : 'save-outline'}"></svg>
                 <span>${saved ? 'Verwijderen uit opgeslagen' : 'Opslaan'}</span></div></li>
               <li><div role="menuitem" tabindex="-1"><svg icon-name="hide-outline"></svg><span>Verbergen</span></div></li>`;
-            menu.querySelector('div').onclick = () => {
+            menu.querySelector('div').onclick = (e) => {
+              if (window.ignoreScriptClicks && !e.isTrusted) return; // like a site that only accepts real clicks
               if (this.dataset.saved) delete this.dataset.saved;
               else this.dataset.saved = '1';
               menu.replaceChildren();
