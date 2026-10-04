@@ -89,6 +89,17 @@ async function renderShortcuts() {
   );
 }
 
+async function renderLastHotkey() {
+  const { lastHotkey: last } = await chrome.storage.session.get('lastHotkey').catch(() => ({}));
+  if (!last) {
+    $('lastHotkey').textContent = 'Last hotkey: none received since the browser started.';
+    return;
+  }
+  const secs = Math.round((Date.now() - last.at) / 1000);
+  const ago = secs < 60 ? `${secs}s ago` : `${Math.round(secs / 60)} min ago`;
+  $('lastHotkey').textContent = `Last hotkey: ${last.command}, ${ago} → ${last.outcome}`;
+}
+
 async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   tabId = tab?.id ?? null;
@@ -131,6 +142,8 @@ async function init() {
   $('editKeys').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
 
   renderShortcuts().catch(() => {});
+  renderLastHotkey();
+  chrome.storage.session.onChanged.addListener(renderLastHotkey);
   render(await send(null));
 }
 

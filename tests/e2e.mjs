@@ -454,6 +454,10 @@ await test('popup renders with hotkeys listed', async () => {
   await popup.keyboard.press('Backspace');
   assert.equal(await popup.textContent('#pageKeys button[data-command="toggle-auto"]'), 'set');
   await sw.evaluate(() => chrome.storage.sync.set({ pageKeys: {} }));
+  // The hotkey path (what a global hotkey triggers) records what happened for the panel.
+  await sw.evaluate(() => globalThis.onHotkey('next-post'));
+  await wait(300);
+  assert.match(await popup.textContent('#lastHotkey'), /next-post, \d+s ago → no Reddit\/X tab showing/);
   assert.deepEqual(popupErrors, []);
   await popup.close();
 });

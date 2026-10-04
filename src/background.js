@@ -41,9 +41,24 @@ async function flashBadge(text) {
   setTimeout(() => chrome.action.setBadgeText({ text: '' }).catch(() => {}), 1200);
 }
 
-chrome.commands.onCommand.addListener(async (command, tab) => {
-  const result = await handleCommand(command, tab);
-  flashBadge(result ? '•' : '?');
+// Remembers the last hotkey for the panel's "Last hotkey" line, to see where things stop.
+async function onHotkey(command, tab) {
+  let outcome;
+  try {
+    const target = await findTargetTab(tab);
+    if (!target) outcome = 'no Reddit/X tab showing';
+    else outcome = (await sendToTab(target.id, { type: 'command', command }).catch(() => null)) ? 'sent' : 'tab did not answer';
+  } catch (err) {
+    outcome = `error: ${err?.message || err}`;
+  }
+  flashBadge(outcome === 'sent' ? '•' : '?');
+  chrome.storage.session.set({ lastHotkey: { command, outcome, at: Date.now() } }).catch(() => {});
+  return outcome;
+}
+globalThis.onHotkey = onHotkey; // used by the tests
+
+chrome.commands.onCommand.addListener((command, tab) => {
+  onHotkey(command, tab);
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
