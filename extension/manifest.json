@@ -18,30 +18,57 @@
     }
   },
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "src/background.js",
+    "scripts": [
+      "src/shared.js",
+      "src/background.js"
+    ]
   },
-  "permissions": ["storage", "scripting"],
-  "host_permissions": ["*://*.reddit.com/*", "*://*.x.com/*", "*://*.twitter.com/*"],
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.reddit.com/*",
+    "*://*.x.com/*",
+    "*://*.twitter.com/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["*://*.reddit.com/*", "*://*.x.com/*", "*://*.twitter.com/*"],
-      "js": ["src/shared.js", "src/content.js"],
+      "matches": [
+        "*://*.reddit.com/*",
+        "*://*.x.com/*",
+        "*://*.twitter.com/*"
+      ],
+      "js": [
+        "src/shared.js",
+        "src/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "commands": {
     "next-post": {
-      "suggested_key": { "default": "Ctrl+Shift+2", "mac": "Command+Shift+8" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+2",
+        "mac": "Command+Shift+8"
+      },
       "description": "Next post",
       "global": true
     },
     "previous-post": {
-      "suggested_key": { "default": "Ctrl+Shift+1", "mac": "Command+Shift+7" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+1",
+        "mac": "Command+Shift+7"
+      },
       "description": "Previous post",
       "global": true
     },
     "toggle-auto": {
-      "suggested_key": { "default": "Ctrl+Shift+3", "mac": "Command+Shift+9" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+3",
+        "mac": "Command+Shift+9"
+      },
       "description": "Start / stop auto-scroll",
       "global": true
     },
@@ -59,6 +86,17 @@
     },
     "_execute_action": {
       "description": "Open the GoonScroller panel"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "goonscroller@ponygshock",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
     }
   }
 }

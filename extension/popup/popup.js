@@ -58,7 +58,10 @@ async function init() {
   $('prev').addEventListener('click', async () => render(await send('previous-post')));
   $('next').addEventListener('click', async () => render(await send('next-post')));
   $('auto').addEventListener('click', async () => render(await send('toggle-auto')));
-  $('editKeys').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
+  $('editKeys').addEventListener('click', () => {
+    if (chrome.commands.openShortcutSettings) chrome.commands.openShortcutSettings(); // Firefox
+    else chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  });
 
   renderShortcuts();
   render(await send(null));

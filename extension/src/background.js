@@ -1,6 +1,7 @@
 // GoonScroller background worker: routes hotkeys (including global ones that fire while another
 // app or game has focus) and popup buttons to the right Reddit/X tab.
-importScripts('shared.js');
+// Chrome runs this as a service worker; Firefox loads shared.js itself (manifest background.scripts).
+if (!globalThis.GoonShared) importScripts('shared.js');
 
 const { SITE_PATTERNS } = globalThis.GoonShared;
 const CONTENT_FILES = ['src/shared.js', 'src/content.js'];
