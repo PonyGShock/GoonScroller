@@ -562,7 +562,7 @@ await test('reddit: auto-scroll closes a picture you opened yourself before movi
   await setSettings({ delay: 6, videoWait: 60 });
 });
 
-await test('reddit: full-screen mode opens each post, flips through it, closes it and moves on', async () => {
+await test('reddit: full-screen auto-scroll opens each post, flips through it, closes it and moves on; manual keys stay in the feed', async () => {
   await setSettings({ smooth: false, delay: 1, fullscreen: true, flipGalleries: true, videoWait: 0 });
   await open('https://www.reddit.com/r/test/');
   const viewer = () => page.evaluate(() => {
@@ -570,11 +570,12 @@ await test('reddit: full-screen mode opens each post, flips through it, closes i
     return box ? `${box.dataset.post}:${box.dataset.index}` : null;
   });
 
-  await cmd('next-post'); // in full-screen mode: scroll to p0 and open it
+  await cmd('next-post'); // by hand: full-screen mode does nothing, just the feed
   await wait(1000);
-  assert.equal(await viewer(), 'p0:0');
+  assert.equal(await viewer(), null);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
 
-  await cmd('toggle-auto');
+  await cmd('toggle-auto'); // auto-scroll: opens the current post first
   const seen = [];
   for (let i = 0; i < 150 && !seen.includes('p5:0'); i++) {
     const v = (await viewer()) ?? `feed:${await postAt('shreddit-post', 61)}`;
@@ -587,9 +588,9 @@ await test('reddit: full-screen mode opens each post, flips through it, closes i
   const steps = seen.filter((v) => expected.includes(v));
   assert.deepEqual(steps, expected, seen.join(' → '));
 
-  await cmd('previous-post'); // manual keys follow full-screen mode too: close, go back, open
+  await cmd('previous-post'); // by hand: closes the viewer, goes back, doesn't open anything
   await wait(1200);
-  assert.equal(await viewer(), null, 'p4 has nothing to open');
+  assert.equal(await viewer(), null);
   assert.equal(await postAt('shreddit-post', 61), 'p4');
   await cmd('toggle-fullscreen'); // turning it off leaves the feed as it is
   await setSettings({ fullscreen: false, delay: 6, videoWait: 60 });

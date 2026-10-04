@@ -180,9 +180,10 @@
     for (let i = 0; i < 10 && openViewer(); i++) await sleep(100);
   }
 
-  // Moving between posts: always close an open viewer first; in full-screen mode open the next one.
+  // Moving between posts: always close an open viewer first. Full-screen mode (opening the next
+  // post) only applies while auto-scroll runs; by hand it's too much going on.
   async function moveTo(dir) {
-    if (settings.fullscreen) return moveFullscreen(dir);
+    if (settings.fullscreen && auto) return moveFullscreen(dir);
     await closeViewer();
     await navigate(dir);
   }
@@ -843,8 +844,8 @@
       case 'toggle-fullscreen':
         saveSetting({ fullscreen: !settings.fullscreen });
         hud.toast(`Full-screen mode: ${settings.fullscreen ? 'on' : 'off'}`);
-        if (settings.fullscreen) openCurrent();
-        else if (openViewer()) toggleMedia(true);
+        if (settings.fullscreen && auto) openCurrent();
+        else if (!settings.fullscreen && auto && openViewer()) toggleMedia(true);
         break;
       case 'toggle-auto':
         setAuto(!auto);
