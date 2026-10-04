@@ -539,6 +539,62 @@ await test('reddit: open / close picture key opens the gallery in the full-scree
   assert.equal(await page.locator('#lightbox').count(), 0);
 });
 
+await test('reddit: auto-scroll closes a picture you opened yourself before moving on', async () => {
+  await setSettings({ smooth: false, delay: 1, fullscreen: false, flipGalleries: true, videoWait: 0 });
+  await open('https://www.reddit.com/r/test/');
+  await cmd('next-post'); // p0
+  await wait(600);
+  await cmd('open-media'); // opened by hand (full-screen mode off)
+  await wait(300);
+  assert.equal(await page.locator('#lightbox').count(), 1);
+  await cmd('toggle-auto');
+  await wait(2200);
+  await cmd('toggle-auto');
+  assert.equal(await page.locator('#lightbox').count(), 0, 'viewer should be closed');
+  assert.equal(await postAt('shreddit-post', 61), 'p2', 'moved exactly one post, visibly');
+
+  await cmd('open-media');
+  await wait(300);
+  await cmd('next-post'); // the manual key closes it too
+  await wait(800);
+  assert.equal(await page.locator('#lightbox').count(), 0);
+  assert.equal(await postAt('shreddit-post', 61), 'p4');
+  await setSettings({ delay: 6, videoWait: 60 });
+});
+
+await test('reddit: full-screen mode opens each post, flips through it, closes it and moves on', async () => {
+  await setSettings({ smooth: false, delay: 1, fullscreen: true, flipGalleries: true, videoWait: 0 });
+  await open('https://www.reddit.com/r/test/');
+  const viewer = () => page.evaluate(() => {
+    const box = document.getElementById('lightbox');
+    return box ? `${box.dataset.post}:${box.dataset.index}` : null;
+  });
+
+  await cmd('next-post'); // in full-screen mode: scroll to p0 and open it
+  await wait(1000);
+  assert.equal(await viewer(), 'p0:0');
+
+  await cmd('toggle-auto');
+  const seen = [];
+  for (let i = 0; i < 150 && !seen.includes('p5:0'); i++) {
+    const v = (await viewer()) ?? `feed:${await postAt('shreddit-post', 61)}`;
+    if (seen.at(-1) !== v) seen.push(v);
+    await wait(100);
+  }
+  await cmd('toggle-auto');
+  // p0 (1 image) → p2 (gallery, 3 images) → p4 (video player, nothing to open: feed view) → p5
+  const expected = ['p0:0', 'p2:0', 'p2:1', 'p2:2', 'feed:p4', 'p5:0'];
+  const steps = seen.filter((v) => expected.includes(v));
+  assert.deepEqual(steps, expected, seen.join(' → '));
+
+  await cmd('previous-post'); // manual keys follow full-screen mode too: close, go back, open
+  await wait(1200);
+  assert.equal(await viewer(), null, 'p4 has nothing to open');
+  assert.equal(await postAt('shreddit-post', 61), 'p4');
+  await cmd('toggle-fullscreen'); // turning it off leaves the feed as it is
+  await setSettings({ fullscreen: false, delay: 6, videoWait: 60 });
+});
+
 // ---------------------------------------------------------------- X
 
 await test('x: lines tweets up under the header, ignores the "new posts" pill and non-tweets', async () => {

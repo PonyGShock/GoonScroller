@@ -7,6 +7,7 @@ globalThis.GoonShared = {
     pauseOnHover: true, // pause auto mode while the mouse is on the page
     videoWait: 60, // auto mode: let a video play through once, up to this many seconds (0 = off, -1 = whole video)
     flipGalleries: true, // auto mode clicks through gallery images before moving on
+    fullscreen: false, // open every post in the site's full-screen viewer while scrolling
     autoplayVideos: true, // start the video in the post we land on (X often won't by itself)
     hud: true, // small on-screen indicator in the corner
     // Keys set in the panel that work on the page while the browser is focused, without Ctrl/Alt.
@@ -21,6 +22,7 @@ globalThis.GoonShared = {
     ['previous-image', 'Previous image'],
     ['toggle-auto', 'Start / stop auto'],
     ['open-media', 'Open / close picture'],
+    ['toggle-fullscreen', 'Full-screen mode on/off'],
     ['upvote', 'Upvote / like'],
     ['save', 'Save / bookmark'],
   ],

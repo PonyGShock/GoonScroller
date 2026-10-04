@@ -130,19 +130,68 @@
   const CLOSE_LABEL = /^(close|sluiten|schließen|fermer|cerrar)\b/i;
 
   // Open the current post's picture in the site's own full-screen viewer, or close it if open.
-  function toggleMedia() {
+  function toggleMedia(quiet = false) {
     const viewer = openViewer();
     if (viewer) {
       const close = deepQueryAll(viewer, 'button, [role="button"]').find((b) => CLOSE_LABEL.test(b.getAttribute('aria-label') || ''));
-      if (close) return close.click();
-      const init = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, composed: true, cancelable: true };
-      for (const target of [document.activeElement ?? document.body, document]) target.dispatchEvent(new KeyboardEvent('keydown', init));
-      return;
+      if (close) close.click();
+      else {
+        const init = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, composed: true, cancelable: true };
+        for (const target of [document.activeElement ?? document.body, document]) target.dispatchEvent(new KeyboardEvent('keydown', init));
+      }
+      return 'closed';
     }
     const post = currentPost();
     const target = post && MEDIA_TARGETS.map((s) => deepQueryAll(post, s).find((el) => el.getBoundingClientRect().height > 0)).find(Boolean);
-    if (!target) return hud.toast('No picture to open');
+    if (!target) {
+      if (!quiet) hud.toast('No picture to open');
+      return null;
+    }
     realClick(target);
+    return 'opened';
+  }
+
+  // ------------------------------------------------------------------ full-screen mode
+  // Every post is opened in the site's own full-screen viewer; moving on closes it, scrolls to the
+  // next post and opens that one. Posts with nothing to open stay in the feed view.
+
+  let fullscreenOpened = null; // the post we last tried to open, so a closed viewer means "move on"
+
+  async function openCurrent() {
+    if (openViewer()) return true;
+    fullscreenOpened = cursor;
+    if (!toggleMedia(true)) return false;
+    for (let i = 0; i < 15; i++) {
+      await sleep(100);
+      const viewer = openViewer();
+      if (viewer) {
+        arrivedAt = Date.now();
+        autoplay(viewer, navToken);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Never scroll the feed behind an open viewer: you'd lose your place without seeing it.
+  async function closeViewer() {
+    if (!openViewer()) return;
+    toggleMedia(true);
+    for (let i = 0; i < 10 && openViewer(); i++) await sleep(100);
+  }
+
+  // Moving between posts: always close an open viewer first; in full-screen mode open the next one.
+  async function moveTo(dir) {
+    if (settings.fullscreen) return moveFullscreen(dir);
+    await closeViewer();
+    await navigate(dir);
+  }
+
+  async function moveFullscreen(dir) {
+    await closeViewer();
+    await navigate(dir);
+    await sleep(settings.smooth ? 800 : 250); // let the scroll settle before clicking
+    await openCurrent();
   }
 
   // A click with the pointer events around it, for handlers that listen to pointerdown/up.
@@ -588,8 +637,11 @@
     if (document.hidden) return startCountdown(1000); // tab in the background: wait
     const wait = videoWait();
     if (wait) return startCountdown(wait.ms, wait.label);
+    if (settings.fullscreen && !openViewer() && fullscreenOpened !== cursor && (await openCurrent())) {
+      return startCountdown();
+    }
     if (settings.flipGalleries && (await flipImage(1))) return startCountdown();
-    await navigate(1);
+    await moveTo(1);
     startCountdown();
   }
 
@@ -635,8 +687,10 @@
     const left = (limit < 0 ? Infinity : limit * 1000) - elapsed;
     if (left <= 300) return null;
 
-    const videos = [...deepQueryAll(cursor, 'video'), ...embeddedVideos(cursor)];
-    const player = videos.length || deepQueryAll(cursor, VIDEO_PLAYERS).length;
+    const viewer = openViewer();
+    const scopes = viewer ? [cursor, viewer] : [cursor];
+    const videos = scopes.flatMap((s) => [...deepQueryAll(s, 'video'), ...embeddedVideos(s)]);
+    const player = videos.length || scopes.some((s) => deepQueryAll(s, VIDEO_PLAYERS).length);
     if (!player) return null;
     const video = videos
       .filter((v) => Number.isFinite(v.duration) && v.duration > 0)
@@ -779,9 +833,16 @@
     mouseInside = false; // a hotkey means the mouse is busy elsewhere
     switch (command) {
       case 'next-post':
-      case 'previous-post':
-        navigate(command === 'next-post' ? 1 : -1);
+      case 'previous-post': {
+        moveTo(command === 'next-post' ? 1 : -1);
         if (auto) startCountdown();
+        break;
+      }
+      case 'toggle-fullscreen':
+        saveSetting({ fullscreen: !settings.fullscreen });
+        hud.toast(`Full-screen mode: ${settings.fullscreen ? 'on' : 'off'}`);
+        if (settings.fullscreen) openCurrent();
+        else if (openViewer()) toggleMedia(true);
         break;
       case 'toggle-auto':
         setAuto(!auto);

@@ -28,6 +28,11 @@ has focus.
   is only a fallback.
 - **Open / close picture**: opens the current post's picture in the site's full-screen viewer, or
   closes the viewer. Next/previous image work inside it.
+- **Full-screen mode**: every post opens in the site's full-screen viewer. Auto-scroll (or the
+  next/previous keys) flips through it, waits for videos, closes it, moves to the next post and opens
+  that one. Posts with nothing to open stay in the feed view.
+- The feed never scrolls behind an open viewer: moving on always closes it first, so you don't end
+  up 50 posts further when you close it.
 - **Autoplay videos**: starts the video in the post you land on (X often won't by itself) and
   pauses it when you move on.
 - **Global hotkeys** that work while you're in a game.
@@ -63,6 +68,7 @@ doesn't let extensions do that themselves.
 | Shorter / longer auto delay    | not set         |       |
 | Toggle "images & videos only"  | not set         |       |
 | Open / close picture           | not set         |       |
+| Full-screen mode on / off      | not set         |       |
 | Upvote (Reddit) / like (X)     | not set         |       |
 | Save (Reddit) / bookmark (X)   | not set         |       |
 
@@ -115,6 +121,7 @@ Click the toolbar icon:
 - **Prev / Auto / Next** buttons
 - **Auto-scroll delay**, 1 second to 5 minutes per post (or per gallery image)
 - **Auto-scroll flips through galleries**
+- **Full-screen mode: open every post full screen**
 - **Only stop on images & videos**
 - **Pause while mouse is on the page**
 - **Autoplay videos**

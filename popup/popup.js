@@ -1,7 +1,7 @@
 const { DEFAULTS, DELAY_STEPS, PAGE_KEY_ACTIONS, nearestStep, formatDelay, formatKey } = globalThis.GoonShared;
 const $ = (id) => document.getElementById(id);
 
-const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'open-media', 'upvote', 'save', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
+const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'open-media', 'toggle-fullscreen', 'upvote', 'save', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
 
 let tabId = null;
 let pageKeys = {};
