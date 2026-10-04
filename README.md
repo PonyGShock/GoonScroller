@@ -113,7 +113,18 @@ The panel also has **◀ Image / Image ▶** buttons for galleries.
 
 ### Saving on Reddit doesn't work?
 
-Open the GoonScroller panel: under **Last Reddit save** it shows what the last save attempt tried
+**First: refresh the page.** This catches almost everyone, especially on **macOS**. GoonScroller
+saves the post straight through Reddit, so **Reddit's own screen doesn't notice right away**:
+
+- Reddit does **not** show its own "Post saved" message.
+- The post's **"…" menu still says "Save"** (not "Remove from saved") **until you refresh**.
+
+The post **is** saved. Check **reddit.com/user/me/saved**, or refresh the page and open the
+"…" menu again. Trust GoonScroller's own message in the corner ("Saved ✓"): it only appears after
+Reddit has confirmed the save. Pressing the key on a post that's already saved won't unsave it; it
+says "Already saved ✓". Press again within 4 seconds if you really want to unsave.
+
+Still not in your saved posts? Open the GoonScroller panel: under **Last Reddit save** it shows what the last save attempt tried
 and why each way failed (it never contains login data). **Copy report** and include it when you
 report the problem.
 
@@ -188,6 +199,9 @@ fix them, but most have a workaround.
   opens the post's page), so GoonScroller shows a message instead and auto-scroll leaves it in the feed.
 - **Only Reddit's own videos, X videos and redgifs embeds are waited for.** Other embedded players
   (for example YouTube) are shown, but auto-scroll can't see how long they are.
+- **Reddit only shows a save after a refresh** (all systems, most noticed on macOS). Reddit's own
+  "Post saved" message doesn't appear and the "…" menu keeps saying "Save" until you refresh, but
+  the post is saved: see reddit.com/user/me/saved.
 - **X (and Reddit) limit how fast you can save/like the same post.** Toggling it many times quickly
   makes the site ignore or undo it. GoonScroller ignores a second press on the same post within 1.5
   seconds to avoid that, but the site's own limit can still kick in.
