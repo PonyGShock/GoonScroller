@@ -345,53 +345,48 @@ demo.addEventListener('mouseleave', () => {
 });
 
 document.addEventListener('keydown', (e) => {
-  lightKeys(e, true);
   const name = KEYMAP[e.code];
   if (!name || e.ctrlKey || e.metaKey || e.altKey) return;
   if (!hovering && document.activeElement !== demo) return;
   e.preventDefault();
   act(name);
 });
-document.addEventListener('keyup', (e) => lightKeys(e, false));
-window.addEventListener('blur', () => $$('.caps kbd.down').forEach((k) => k.classList.remove('down')));
 
 // ---------- hotkey list ----------
 
-const LABELS = { ctrl: 'Ctrl', shift: 'Shift', meta: '⌘', alt: 'Alt', arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→' };
-let os = /Mac/.test(navigator.platform) ? 'mac' : 'win';
+// Pre-set keys show as they are; every other slot is open. Hovering a slot flips through
+// example keys, to show you can pick anything.
+const isMac = /Mac/.test(navigator.platform);
+const EXAMPLES = ['Alt Q', 'F8', 'Ctrl ↓', 'Alt Shift S', '→', 'Ctrl Space', 'Alt 1', 'F2', 'Ctrl Shift L', 'Alt E'];
+const keysHtml = (keys) => keys.split(' ').map((k) => `<b>${k}</b>`).join('');
 
-function renderKeys() {
-  for (const row of $$('.keyrow')) {
-    const keys = (os === 'mac' ? row.dataset.mac : row.dataset.keys).split(' ');
-    $('.caps', row).innerHTML = keys.map((k) => `<kbd data-k="${k}">${LABELS[k] || k.toUpperCase()}</kbd>`).join('');
-  }
-  $$('.os-switch button').forEach((b) => b.classList.toggle('on', b.dataset.os === os));
-}
-
-$$('.os-switch button').forEach((b) =>
-  b.addEventListener('click', () => {
-    os = b.dataset.os;
-    renderKeys();
-  }),
-);
-
-function keyName(e) {
-  if (e.key === 'Control') return 'ctrl';
-  if (e.key === 'Shift') return 'shift';
-  if (e.key === 'Meta') return 'meta';
-  if (e.key === 'Alt') return 'alt';
-  if (e.code.startsWith('Digit')) return e.code.slice(5);
-  return e.key.toLowerCase();
-}
-
-function lightKeys(e, down) {
-  const k = keyName(e);
-  $$(`.caps kbd[data-k="${k}"]`).forEach((el) => el.classList.toggle('down', down));
-  for (const row of $$('.keyrow')) {
-    const caps = $$('.caps kbd', row);
-    const all = row.dataset.keys.startsWith('arrow') ? caps.some((c) => c.classList.contains('down')) : caps.every((c) => c.classList.contains('down'));
-    row.classList.toggle('lit', all);
-  }
+for (const [i, action] of $$('.action').entries()) {
+  const slot = $('.slot', action);
+  const preset = isMac ? action.dataset.mac : action.dataset.default;
+  const rest = () => {
+    slot.classList.toggle('open', !preset);
+    slot.innerHTML = preset ? keysHtml(preset) : 'your key';
+  };
+  rest();
+  action.style.setProperty('--i', i);
+  let timer = 0;
+  let n = i;
+  const spin = () => {
+    slot.classList.remove('open');
+    slot.classList.remove('flip');
+    void slot.offsetWidth;
+    slot.classList.add('flip');
+    slot.innerHTML = keysHtml(EXAMPLES[n++ % EXAMPLES.length]);
+  };
+  action.addEventListener('mouseenter', () => {
+    spin();
+    timer = setInterval(spin, 650);
+  });
+  action.addEventListener('mouseleave', () => {
+    clearInterval(timer);
+    slot.classList.remove('flip');
+    rest();
+  });
 }
 
 // ---------- reveal on scroll ----------
@@ -420,7 +415,6 @@ new IntersectionObserver(([en]) => {
 
 // ---------- start ----------
 
-renderKeys();
 ensurePosts(4);
 let first = 0;
 while (!isMedia(posts[first])) first++;
