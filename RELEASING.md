@@ -41,8 +41,12 @@ download the zip, unzip it and use **Load unpacked**.
      `npm run package` again.
    - *Description:* see "Store listing text" below.
    - *Category:* Productivity (or Tools). *Language:* English.
-   - *Graphics:* the 128×128 icon is `icons/icon-128.png`. Add at least one **1280×800** screenshot
-     and a **440×280** small promo tile. Use only safe-for-work content in them.
+   - *Graphics:* everything is ready in `store/` (rebuild with `npm run store-assets`):
+     - Store icon: `store-icon-128.png`
+     - Screenshots: `screenshot-1.png` … `screenshot-5.png` (1280×800, in that order)
+     - Small promo tile: `promo-small-440x280.png`
+     - Marquee promo tile: `promo-marquee-1400x560.png`
+     - Global promo video: optional, a YouTube link. Leave it empty until the promo video exists.
 4. **Privacy practices:**
    - *Single purpose:* "Hands-free, post-by-post scrolling of Reddit and X, controlled by hotkeys."
    - *Permission justifications:* copy them from `PRIVACY.md`.

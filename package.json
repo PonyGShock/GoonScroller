@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node tests/e2e.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "store-assets": "node scripts/store-assets.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"
