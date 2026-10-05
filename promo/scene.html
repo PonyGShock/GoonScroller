@@ -1,0 +1,715 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GoonScroller promo</title>
+    <style>
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url('../store/space-grotesk.woff2');
+        font-weight: 300 700;
+      }
+      :root {
+        --bg: #0d0e12;
+        --card: #1b1d24;
+        --card-2: #22252e;
+        --line: #2a2d36;
+        --text: #ecedf1;
+        --muted: #8b8f99;
+        --accent: #ff4f6d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+      }
+      #glow {
+        background: radial-gradient(900px 700px at var(--gx, 70%) var(--gy, 40%), rgba(255, 79, 109, 0.16), transparent 70%),
+          radial-gradient(1200px 900px at 15% 110%, rgba(120, 80, 255, 0.08), transparent 70%);
+      }
+      #vignette {
+        background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.65));
+        z-index: 50;
+      }
+      #grain {
+        z-index: 51;
+        width: 480px;
+        height: 270px;
+        transform: scale(4);
+        transform-origin: 0 0;
+        opacity: 0.045;
+        image-rendering: pixelated;
+        mix-blend-mode: screen;
+      }
+      #dust {
+        z-index: 2;
+      }
+      #fade {
+        z-index: 60;
+        background: #000;
+      }
+      .text {
+        position: absolute;
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        letter-spacing: -0.02em;
+        z-index: 20;
+      }
+      .center {
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+      .big {
+        font-size: 92px;
+        font-weight: 700;
+        line-height: 1.05;
+      }
+      .mid {
+        font-size: 64px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .small {
+        font-family: system-ui, sans-serif;
+        font-size: 30px;
+        color: var(--muted);
+        letter-spacing: 0;
+      }
+      .accent {
+        color: var(--accent);
+      }
+
+      /* monitor */
+      #monitor {
+        position: absolute;
+        width: 700px;
+        height: 880px;
+        top: 100px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        overflow: hidden;
+        box-shadow: 0 60px 140px -40px rgba(0, 0, 0, 0.9), 0 0 120px -30px rgba(255, 79, 109, 0.25);
+        z-index: 10;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 54px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .bar i {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+      .url {
+        flex: 1;
+        margin-left: 12px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .screen {
+        position: relative;
+        height: calc(100% - 54px);
+        overflow: hidden;
+        background: #14151b;
+      }
+      .head {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 22px;
+        background: rgba(20, 21, 27, 0.94);
+        border-bottom: 1px solid var(--line);
+        font-weight: 700;
+        font-size: 19px;
+        z-index: 3;
+      }
+      .dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #ff4500;
+      }
+      #feed {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 58px;
+      }
+      .post {
+        margin: 0 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .ptop {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 17px;
+        margin-bottom: 10px;
+      }
+      .av {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+      }
+      .pname {
+        font-weight: 700;
+      }
+      .pmeta {
+        color: var(--muted);
+      }
+      .ptitle {
+        font-size: 19px;
+        margin-bottom: 14px;
+      }
+      .media {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+      }
+      .slides {
+        display: flex;
+        height: 100%;
+      }
+      .slide {
+        position: relative;
+        flex: none;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .slide::before {
+        content: '';
+        position: absolute;
+        top: 16%;
+        left: var(--sx, 60%);
+        width: 22%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--sun);
+      }
+      .slide::after {
+        content: '';
+        position: absolute;
+        inset: 50% -10% -10%;
+        background: var(--hill);
+        clip-path: polygon(0 60%, 22% 18%, 45% 55%, 68% 8%, 100% 50%, 100% 100%, 0 100%);
+      }
+      .count {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        padding: 3px 11px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.55);
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .dots {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        display: flex;
+        gap: 7px;
+        transform: translateX(-50%);
+      }
+      .dots i {
+        width: 9px;
+        height: 9px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.45);
+      }
+      .dots i.on {
+        width: 24px;
+        background: #fff;
+      }
+      .play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 78px;
+        height: 78px;
+        margin: -39px 0 0 -39px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.5);
+        display: grid;
+        place-items: center;
+        font-size: 30px;
+      }
+      .vbar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .vfill {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+      }
+      .acts {
+        display: flex;
+        gap: 22px;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .hud {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        z-index: 4;
+        padding: 11px 16px;
+        min-width: 230px;
+        border-radius: 13px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(17, 17, 23, 0.94);
+        font-weight: 600;
+        font-size: 18px;
+      }
+      .hbar {
+        height: 5px;
+        margin-top: 9px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.15);
+        overflow: hidden;
+      }
+      .hfill {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+      }
+
+      /* keycaps */
+      #keys {
+        position: absolute;
+        display: flex;
+        gap: 18px;
+        z-index: 20;
+      }
+      .cap {
+        min-width: 110px;
+        padding: 22px 28px;
+        border: 2px solid var(--line);
+        border-bottom-width: 9px;
+        border-radius: 20px;
+        background: var(--card);
+        text-align: center;
+        font: 700 40px ui-monospace, Menlo, Consolas, monospace;
+      }
+
+      /* game panel */
+      #game {
+        position: absolute;
+        width: 900px;
+        height: 560px;
+        top: 330px;
+        left: 120px;
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        z-index: 9;
+        background: linear-gradient(#1b1440, #432060 55%, #1a1030);
+      }
+      #game .sun {
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        width: 220px;
+        height: 220px;
+        margin-left: -110px;
+        border-radius: 50%;
+        background: linear-gradient(#ffcf7a, #ff4f6d);
+      }
+      #game .grid {
+        position: absolute;
+        left: -50%;
+        right: -50%;
+        bottom: 0;
+        height: 55%;
+        background-image: linear-gradient(rgba(255, 79, 109, 0.5) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(255, 79, 109, 0.5) 2px, transparent 2px);
+        background-size: 80px 60px;
+        transform: perspective(300px) rotateX(55deg);
+        transform-origin: bottom;
+        background-color: #120c24;
+      }
+      #game .cross {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 34px;
+        height: 34px;
+        margin: -17px;
+      }
+      #game .cross::before,
+      #game .cross::after {
+        content: '';
+        position: absolute;
+        background: rgba(255, 255, 255, 0.85);
+      }
+      #game .cross::before {
+        left: 16px;
+        width: 2px;
+        height: 100%;
+      }
+      #game .cross::after {
+        top: 16px;
+        height: 2px;
+        width: 100%;
+      }
+      #game .wasd {
+        position: absolute;
+        left: 28px;
+        bottom: 26px;
+        display: grid;
+        grid-template-columns: repeat(3, 46px);
+        gap: 6px;
+      }
+      #game .wasd b {
+        display: grid;
+        place-items: center;
+        height: 46px;
+        border-radius: 9px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font: 700 18px ui-monospace, monospace;
+      }
+      #game .wasd b.on {
+        background: rgba(255, 79, 109, 0.6);
+      }
+      .label {
+        position: absolute;
+        top: 18px;
+        left: 22px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.5);
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      #logo {
+        position: absolute;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 26px;
+      }
+      #logo svg {
+        width: 110px;
+        height: 110px;
+      }
+      #logo .name {
+        font: 700 96px 'Space Grotesk', system-ui, sans-serif;
+        letter-spacing: -0.03em;
+      }
+      .pills {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+      }
+      .pills span {
+        padding: 10px 22px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: #c5c7cf;
+        font-size: 26px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layer" id="glow"></div>
+    <canvas class="layer" id="dust" width="1920" height="1080"></canvas>
+
+    <div id="monitor">
+      <div class="bar"><i></i><i></i><i></i><span class="url">reddit.com</span></div>
+      <div class="screen">
+        <div class="head"><span class="dot"></span>Reddit</div>
+        <div id="feed"></div>
+        <div class="hud" id="hud"><div id="hudText">Auto · every 3s</div><div class="hbar"><div class="hfill" id="hfill"></div></div></div>
+      </div>
+    </div>
+
+    <div id="game">
+      <div class="sun"></div>
+      <div class="grid"></div>
+      <div class="cross"></div>
+      <div class="wasd"><span></span><b>W</b><span></span><b>A</b><b>S</b><b>D</b></div>
+      <span class="label">your game</span>
+    </div>
+
+    <div id="keys"><div class="cap">Ctrl</div><div class="cap">Shift</div><div class="cap">2</div></div>
+
+    <div id="logo">
+      <svg viewBox="0 0 128 128">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b85" /><stop offset="1" stop-color="#e83a5c" /></linearGradient></defs>
+        <rect width="128" height="128" rx="28" fill="url(#g)" />
+        <path d="M38 38 64 62 90 38" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M38 66 64 90 90 66" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span class="name">GoonScroller</span>
+    </div>
+
+    <!-- text cards; data-in/out are seconds -->
+    <div class="text center big" data-in="0.8" data-out="5.9" style="top: 400px">it's 2am.</div>
+    <div class="text center small" data-in="2.6" data-out="5.9" style="top: 520px; font-size: 40px">just one more post.</div>
+
+    <div class="text small" data-in="8.0" data-out="12.9" style="left: 1080px; top: 560px; font-size: 40px; color: #c5c7cf">Reddit &amp; X,<br />one post at a time.</div>
+
+    <div class="text mid" data-in="13.6" data-out="19.6" style="left: 1080px; top: 300px">one key.<br /><span class="accent">one post.</span></div>
+    <div class="text small" data-in="14.4" data-out="19.6" style="left: 1080px; top: 470px">snapped perfectly under the header.</div>
+
+    <div class="text mid" data-in="20.3" data-out="26.3" style="left: 1080px; top: 300px">or press<br /><span class="accent">nothing at all.</span></div>
+    <div class="text small" data-in="21.0" data-out="26.3" style="left: 1080px; top: 470px">it flips galleries and lets<br />videos play to the end.</div>
+
+    <div class="text mid center" data-in="27.0" data-out="32.9" style="top: 100px">works while you game.</div>
+    <div class="text small center" data-in="27.6" data-out="32.9" style="top: 950px">global hotkeys reach your second monitor. no alt-tab.</div>
+
+    <div class="text center" data-in="34.6" data-out="40" style="top: 610px">
+      <div class="small" style="font-size: 38px; color: #c5c7cf; margin-bottom: 34px">hands-free doomscrolling for Reddit &amp; X</div>
+      <div class="pills"><span>free</span><span>open source</span><span>runs 100% locally</span><span>made with AI</span></div>
+    </div>
+    <div class="text center small" data-in="35.4" data-out="40" style="top: 900px; font-size: 30px">ponygshock.github.io/GoonScroller</div>
+
+    <canvas class="layer" id="grain" width="480" height="270"></canvas>
+    <div class="layer" id="vignette"></div>
+    <div class="layer" id="fade"></div>
+
+    <script>
+      const T = window.TIMELINE;
+      const $ = (s) => document.querySelector(s);
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+      const lerp = (a, b, k) => a + (b - a) * k;
+      const easeInOut = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+      // Soft snap: fast start, gentle settle with a tiny overshoot.
+      const snapEase = (k) => {
+        const c = 1.2;
+        return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
+      };
+      const prog = (t, start, dur) => clamp((t - start) / dur);
+
+      // ---------- feed ----------
+      const PAL = [
+        ['linear-gradient(#ff9a8b,#ff6a88)', '#ffe29a', '#3a1c4a'],
+        ['linear-gradient(#5ee7df,#3b82f6)', '#fef9c3', '#123a5a'],
+        ['linear-gradient(#fbc2eb,#a18cd1)', '#fff1f2', '#3b2a63'],
+        ['linear-gradient(#f6d365,#fda085)', '#fffbeb', '#7c2d12'],
+        ['linear-gradient(#0f172a,#4c1d95)', '#e0e7ff', '#020617'],
+        ['linear-gradient(#84fab0,#8fd3f4)', '#fefce8', '#14532d'],
+        ['linear-gradient(#ff4f6d,#ffb199)', '#fff7ed', '#4a044e'],
+      ];
+      const KINDS = ['image', 'image', 'gallery', 'image', 'image', 'image', 'gallery', 'video', 'image', 'image', 'image', 'image', 'image', 'image'];
+      const NAMES = ['r/EarthPics', 'r/CozyPlaces', 'r/wallpapers', 'r/itookapicture', 'r/SkyPics', 'r/aww', 'r/gaming', 'r/oddlysatisfying'];
+      const TITLES = ['the colors tonight', 'golden hour hit different', 'found this spot by accident', 'not edited, I promise', 'rainy window, lo-fi on', 'rate my wallpaper', 'this view at 6am', 'calm.'];
+      const feed = $('#feed');
+      const posts = KINDS.map((kind, n) => {
+        const el = document.createElement('div');
+        el.className = 'post';
+        const slides = kind === 'gallery' ? 3 : 1;
+        const slideHtml = Array.from({ length: slides }, (_, i) => {
+          const p = PAL[(n * 3 + i * 2) % PAL.length];
+          return `<div class="slide" style="background:${p[0]};--sun:${p[1]};--hill:${p[2]};--sx:${18 + ((n * 23 + i * 31) % 55)}%"></div>`;
+        }).join('');
+        const extra =
+          kind === 'gallery'
+            ? `<div class="count">1/3</div><div class="dots"><i class="on"></i><i></i><i></i></div>`
+            : kind === 'video'
+              ? `<div class="play">▶</div><div class="vbar"><div class="vfill"></div></div>`
+              : '';
+        el.innerHTML = `<div class="ptop"><span class="av" style="background:${PAL[n % PAL.length][0]}"></span><span class="pname">${NAMES[n % NAMES.length]}</span><span class="pmeta">· ${(n * 7) % 23 + 1}h</span></div>
+          <div class="ptitle">${TITLES[n % TITLES.length]}</div>
+          <div class="media" style="height:${kind === 'video' ? 380 : 420 + ((n * 47) % 120)}px"><div class="slides">${slideHtml}</div>${extra}</div>
+          <div class="acts"><span>▲ Upvote</span><span>Comments</span><span>Save</span></div>`;
+        feed.append(el);
+        return { el, kind };
+      });
+      const offsets = () => posts.map((p) => p.el.offsetTop);
+
+      // ---------- dust + grain ----------
+      const dust = $('#dust').getContext('2d');
+      const grain = $('#grain').getContext('2d');
+      const img = grain.createImageData(480, 270);
+      function rng(seed) {
+        let s = seed >>> 0;
+        return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+      }
+      const motes = Array.from({ length: 60 }, (_, i) => {
+        const r = rng(i * 7919 + 13);
+        return { x: r() * 1920, y: r() * 1080, s: 0.6 + r() * 2.2, v: 6 + r() * 16, ph: r() * 6.28, a: 0.05 + r() * 0.18 };
+      });
+
+      function drawDust(t) {
+        dust.clearRect(0, 0, 1920, 1080);
+        for (const m of motes) {
+          const x = (m.x + Math.sin(t * 0.3 + m.ph) * 30) % 1920;
+          const y = (((m.y - t * m.v) % 1080) + 1080) % 1080;
+          dust.fillStyle = `rgba(255,${180 + m.s * 20},${200},${m.a * (0.6 + 0.4 * Math.sin(t + m.ph))})`;
+          dust.beginPath();
+          dust.arc(x, y, m.s, 0, 6.283);
+          dust.fill();
+        }
+      }
+      function drawGrain(frame) {
+        const r = rng(frame * 31 + 7);
+        for (let i = 0; i < img.data.length; i += 4) {
+          const v = r() * 255;
+          img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+          img.data[i + 3] = 255;
+        }
+        grain.putImageData(img, 0, 0);
+      }
+
+      // ---------- frame ----------
+      let OFF = null;
+      window.render = (t, frame) => {
+        OFF ||= offsets();
+        drawDust(t);
+        drawGrain(Math.floor(frame / 4));
+        document.documentElement.style.setProperty('--gx', `${60 + Math.sin(t * 0.15) * 12}%`);
+        document.documentElement.style.setProperty('--gy', `${40 + Math.cos(t * 0.12) * 10}%`);
+
+        // text cards
+        for (const el of document.querySelectorAll('[data-in]')) {
+          const a = +el.dataset.in;
+          const b = +el.dataset.out;
+          const k = Math.min(prog(t, a, 0.9), 1 - prog(t, b - 0.6, 0.6));
+          el.style.opacity = easeInOut(clamp(k));
+          el.style.transform = `translateY(${(1 - easeInOut(prog(t, a, 0.9))) * 24}px)`;
+          el.style.filter = `blur(${(1 - easeInOut(prog(t, a, 0.9))) * 8}px)`;
+        }
+
+        // monitor position: rises in at ~6.7s, slides right for the game scene, leaves at the end
+        const mon = $('#monitor');
+        const rise = easeInOut(prog(t, 6.4, 1.4));
+        const toGame = easeInOut(prog(t, 26.4, 1.2));
+        const away = easeInOut(prog(t, 32.8, 1.2));
+        const x = lerp(lerp(300, 1030, toGame), 610, away);
+        const y = lerp(1100, 100, rise) + lerp(0, 60, toGame) * (1 - away);
+        const sc = lerp(1, 0.72, toGame);
+        mon.style.left = `${x}px`;
+        mon.style.top = `${y}px`;
+        mon.style.transform = `scale(${sc}) translateY(${away * 900}px)`;
+        mon.style.opacity = 1 - away;
+
+        // feed scrolling
+        let pos = 0;
+        let idx = 0;
+        T.snaps.forEach((s, i) => {
+          const k = snapEase(prog(t, s, 0.55));
+          if (t >= s) idx = i + 1;
+          pos += k * (OFF[i + 1] - OFF[i]);
+        });
+        feed.style.transform = `translateY(${-pos + 14}px)`;
+
+        // gallery flips on post 6
+        const g = posts[6].el;
+        let slide = 0;
+        T.flips.forEach((f) => (slide += snapEase(prog(t, f, 0.5))));
+        g.querySelector('.slides').style.transform = `translateX(${-slide * 100}%)`;
+        const si = T.flips.filter((f) => t >= f).length;
+        g.querySelector('.count').textContent = `${si + 1}/3`;
+        g.querySelectorAll('.dots i').forEach((d, i) => d.classList.toggle('on', i === si));
+
+        // video on post 7 plays between snaps 6 and 7
+        const v = posts[7].el;
+        const vp = prog(t, T.snaps[6] + 0.3, T.snaps[7] - T.snaps[6] - 0.5);
+        v.querySelector('.vfill').style.width = `${vp * 100}%`;
+        v.querySelector('.play').style.opacity = t > T.snaps[6] + 0.2 ? 0 : 1;
+
+        // HUD: visible during the auto-scroll scene
+        const hud = $('#hud');
+        const hudOn = prog(t, 20.2, 0.4) * (1 - prog(t, 26.6, 0.4));
+        hud.style.opacity = hudOn;
+        let label = 'Auto · next image';
+        let start = 20.2;
+        let end = T.flips[0];
+        if (t >= T.flips[0]) [start, end] = [T.flips[0], T.flips[1]];
+        if (t >= T.flips[1]) [start, end, label] = [T.flips[1], T.snaps[6], 'Auto · every 3s'];
+        if (t >= T.snaps[6]) [start, end, label] = [T.snaps[6], T.snaps[7], 'Video · letting it play'];
+        $('#hudText').textContent = label;
+        $('#hfill').style.width = `${prog(t, start, end - start) * 100}%`;
+
+        // keycaps for the hotkey scene
+        const keys = $('#keys');
+        const kOn = prog(t, 13.8, 0.6) * (1 - prog(t, 19.4, 0.5));
+        keys.style.left = '1080px';
+        keys.style.top = '600px';
+        keys.style.opacity = kOn;
+        let press = 0;
+        for (const kt of T.keys) {
+          const d = t - (kt - 0.14);
+          if (d > 0 && d < 0.4) press = Math.max(press, d < 0.1 ? d / 0.1 : 1 - (d - 0.1) / 0.3);
+        }
+        keys.querySelectorAll('.cap').forEach((c) => {
+          c.style.transform = `translateY(${press * 7}px)`;
+          c.style.borderBottomWidth = `${9 - press * 7}px`;
+          c.style.borderColor = press > 0.3 ? '#ff4f6d' : '#2a2d36';
+          c.style.color = press > 0.3 ? '#ff4f6d' : '#ecedf1';
+          c.style.boxShadow = press > 0.3 ? '0 0 50px -10px rgba(255,79,109,.6)' : 'none';
+        });
+
+        // game panel
+        const game = $('#game');
+        const gOn = easeInOut(prog(t, 26.6, 1.2)) * (1 - easeInOut(prog(t, 32.8, 1.0)));
+        game.style.opacity = gOn;
+        game.style.transform = `translateX(${(1 - gOn) * -80}px)`;
+        game.querySelector('.grid').style.backgroundPosition = `0 ${t * 120}px`;
+        const wasd = game.querySelectorAll('.wasd b');
+        const beat = Math.floor(t * 2.4) % 4;
+        wasd.forEach((b, i) => b.classList.toggle('on', i === [0, 1, 0, 3][beat]));
+
+        // logo: small reveal next to the monitor, then big on the end card
+        const logo = $('#logo');
+        const l1 = easeInOut(prog(t, T.logo, 1.0)) * (1 - easeInOut(prog(t, 12.6, 0.7)));
+        const l2 = easeInOut(prog(t, T.end, 1.2));
+        if (t < 20) {
+          logo.style.left = '1080px';
+          logo.style.top = '400px';
+          logo.style.opacity = l1;
+          logo.style.transform = `scale(${lerp(0.94, 1, l1)})`;
+          logo.style.transformOrigin = 'left center';
+          logo.querySelector('.name').style.fontSize = '84px';
+          logo.querySelector('svg').style.width = logo.querySelector('svg').style.height = '96px';
+        } else {
+          logo.style.left = '50%';
+          logo.style.top = '400px';
+          logo.style.opacity = l2;
+          logo.style.transformOrigin = 'center';
+          logo.style.transform = `translateX(-50%) scale(${lerp(0.9, 1, l2)})`;
+          logo.querySelector('.name').style.fontSize = '120px';
+          logo.querySelector('svg').style.width = logo.querySelector('svg').style.height = '140px';
+        }
+
+        // fade in from black and out at the very end
+        $('#fade').style.opacity = Math.max(1 - prog(t, 0, 1.2), prog(t, T.duration - 1.3, 1.2));
+      };
+    </script>
+  </body>
+</html>
