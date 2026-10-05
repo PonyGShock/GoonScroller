@@ -24,12 +24,20 @@
       html,
       body {
         margin: 0;
-        width: 1920px;
-        height: 1080px;
+        width: var(--W);
+        height: var(--H);
         overflow: hidden;
         background: var(--bg);
         color: var(--text);
         font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      body.h {
+        --W: 1920px;
+        --H: 1080px;
+      }
+      body.v {
+        --W: 1080px;
+        --H: 1920px;
       }
       .layer {
         position: absolute;
@@ -432,6 +440,7 @@
       }
       .pills {
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
         gap: 14px;
       }
@@ -441,6 +450,63 @@
         border-radius: 999px;
         color: #c5c7cf;
         font-size: 26px;
+      }
+      .text.center {
+        padding: 0 60px;
+      }
+      body.h #intro1 { top: 400px; }
+      body.h #intro2 { top: 520px; }
+      body.h #tagB { left: 1080px; top: 560px; }
+      body.h #c1, body.h #d1 { left: 1080px; top: 300px; }
+      body.h #c2, body.h #d2 { left: 1080px; top: 470px; }
+      body.h #e1 { top: 100px; }
+      body.h #e2 { top: 950px; }
+      body.h #f1 { top: 610px; }
+      body.h #url { top: 900px; }
+      body.v #intro1 { top: 800px; }
+      body.v #intro2 { top: 930px; }
+      body.v #tagB { top: 380px; }
+      body.v #c1, body.v #d1 { top: 160px; }
+      body.v #c2, body.v #d2 { top: 330px; }
+      body.v #e1 { top: 170px; }
+      body.v #e2 { top: 1660px; }
+      body.v #f1 { top: 870px; }
+      body.v #url { top: 1290px; }
+      body.v #tagB, body.v #c1, body.v #c2, body.v #d1, body.v #d2 { left: 0; right: 0; text-align: center; padding: 0 60px; }
+      body.v #game { left: 90px; top: 330px; }
+
+      /* spicy cut: blurred "NSFW" posts, warmer light */
+      body.spicy #glow {
+        background: radial-gradient(1000px 800px at var(--gx, 70%) var(--gy, 40%), rgba(255, 50, 110, 0.22), transparent 70%),
+          radial-gradient(1200px 900px at 15% 110%, rgba(170, 40, 160, 0.14), transparent 70%);
+      }
+      .post.nsfw .slide {
+        background-blend-mode: screen;
+      }
+      .post.nsfw .slide::before,
+      .post.nsfw .slide::after {
+        display: none;
+      }
+      .tag18 {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: rgba(10, 10, 14, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        font-weight: 700;
+        font-size: 18px;
+        white-space: nowrap;
+      }
+      .badge {
+        padding: 2px 8px;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 800;
       }
     </style>
   </head>
@@ -477,26 +543,21 @@
       <span class="name">GoonScroller</span>
     </div>
 
-    <!-- text cards; data-in/out are seconds -->
-    <div class="text center big" data-in="0.8" data-out="5.9" style="top: 400px">it's 2am.</div>
-    <div class="text center small" data-in="2.6" data-out="5.9" style="top: 520px; font-size: 40px">just one more post.</div>
-
-    <div class="text small" data-in="8.0" data-out="12.9" style="left: 1080px; top: 560px; font-size: 40px; color: #c5c7cf">Reddit &amp; X,<br />one post at a time.</div>
-
-    <div class="text mid" data-in="13.6" data-out="19.6" style="left: 1080px; top: 300px">one key.<br /><span class="accent">one post.</span></div>
-    <div class="text small" data-in="14.4" data-out="19.6" style="left: 1080px; top: 470px">snapped perfectly under the header.</div>
-
-    <div class="text mid" data-in="20.3" data-out="26.3" style="left: 1080px; top: 300px">or press<br /><span class="accent">nothing at all.</span></div>
-    <div class="text small" data-in="21.0" data-out="26.3" style="left: 1080px; top: 470px">it flips galleries and lets<br />videos play to the end.</div>
-
-    <div class="text mid center" data-in="27.0" data-out="32.9" style="top: 100px">works while you game.</div>
-    <div class="text small center" data-in="27.6" data-out="32.9" style="top: 950px">global hotkeys reach your second monitor. no alt-tab.</div>
-
-    <div class="text center" data-in="34.6" data-out="40" style="top: 610px">
-      <div class="small" style="font-size: 38px; color: #c5c7cf; margin-bottom: 34px">hands-free doomscrolling for Reddit &amp; X</div>
-      <div class="pills"><span>free</span><span>open source</span><span>runs 100% locally</span><span>made with AI</span></div>
+    <!-- text cards; data-in/out are seconds, the words come from COPY below -->
+    <div id="intro1" class="text center big" data-in="0.8" data-out="5.9"></div>
+    <div id="intro2" class="text center small" data-in="2.6" data-out="5.9" style="font-size: 40px"></div>
+    <div id="tagB" class="text small" data-in="8.0" data-out="12.9" style="font-size: 40px; color: #c5c7cf"></div>
+    <div id="c1" class="text mid" data-in="13.6" data-out="19.6"></div>
+    <div id="c2" class="text small" data-in="14.4" data-out="19.6"></div>
+    <div id="d1" class="text mid" data-in="20.3" data-out="26.3"></div>
+    <div id="d2" class="text small" data-in="21.0" data-out="26.3"></div>
+    <div id="e1" class="text mid center" data-in="27.0" data-out="32.9"></div>
+    <div id="e2" class="text small center" data-in="27.6" data-out="32.9"></div>
+    <div id="f1" class="text center" data-in="34.6" data-out="40">
+      <div class="small" id="f1t" style="font-size: 38px; color: #c5c7cf; margin-bottom: 34px"></div>
+      <div class="pills" id="pills"></div>
     </div>
-    <div class="text center small" data-in="35.4" data-out="40" style="top: 900px; font-size: 30px">ponygshock.github.io/GoonScroller</div>
+    <div id="url" class="text center small" data-in="35.4" data-out="40" style="font-size: 30px">ponygshock.github.io/GoonScroller</div>
 
     <canvas class="layer" id="grain" width="480" height="270"></canvas>
     <div class="layer" id="vignette"></div>
@@ -504,6 +565,52 @@
 
     <script>
       const T = window.TIMELINE;
+      // cut: "clean" (store-safe) or "spicy" (social media); layout: "h" 16:9 or "v" 9:16
+      const P = Object.assign({ cut: 'clean', layout: 'h' }, window.PROMO);
+      const V = P.layout === 'v';
+      const SPICY = P.cut === 'spicy';
+      const W = V ? 1080 : 1920;
+      const H = V ? 1920 : 1080;
+      document.body.classList.add(P.layout, P.cut);
+
+      const COPY = {
+        clean: {
+          intro1: "it's 2am.",
+          intro2: 'just one more post.',
+          tagB: 'Reddit &amp; X,<br />one post at a time.',
+          c1: 'one key.<br /><span class="accent">one post.</span>',
+          c2: 'snapped perfectly under the header.',
+          d1: 'or press<br /><span class="accent">nothing at all.</span>',
+          d2: 'it flips galleries and lets<br />videos play to the end.',
+          e1: 'works while you game.',
+          e2: 'global hotkeys reach your second monitor. no alt-tab.',
+          f1t: 'hands-free doomscrolling for Reddit &amp; X',
+          pills: ['free', 'open source', 'runs 100% locally', 'made with AI'],
+        },
+        spicy: {
+          intro1: "it's 2am.",
+          intro2: '<span class="accent">you know why you\'re here.</span>',
+          tagB: 'Reddit &amp; X,<br />one post at a time.',
+          c1: 'one key.<br /><span class="accent">one hand free.</span>',
+          c2: 'every post snaps right into place.',
+          d1: 'or go<br /><span class="accent">fully hands-free.</span>',
+          d2: 'it flips every gallery and lets<br />every video play to the end.',
+          e1: 'works while you game.',
+          e2: 'global hotkeys. no alt-tab. nobody has to know.',
+          f1t: 'hands-free scrolling for your late-night sessions',
+          pills: ['free', 'open source', '100% local: nobody\'s watching', 'made with AI'],
+        },
+      }[P.cut];
+      for (const [id, html] of Object.entries(COPY)) {
+        if (id === 'pills') document.getElementById('pills').innerHTML = html.map((x) => `<span>${x}</span>`).join('');
+        else document.getElementById(id).innerHTML = html;
+      }
+      document.getElementById('dust').width = W;
+      document.getElementById('dust').height = H;
+      document.getElementById('grain').width = W / 4;
+      document.getElementById('grain').height = H / 4;
+      document.getElementById('grain').style.width = `${W / 4}px`;
+      document.getElementById('grain').style.height = `${H / 4}px`;
       const $ = (s) => document.querySelector(s);
       const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
       const lerp = (a, b, k) => a + (b - a) * k;
@@ -528,13 +635,23 @@
       const KINDS = ['image', 'image', 'gallery', 'image', 'image', 'image', 'gallery', 'video', 'image', 'image', 'image', 'image', 'image', 'image'];
       const NAMES = ['r/EarthPics', 'r/CozyPlaces', 'r/wallpapers', 'r/itookapicture', 'r/SkyPics', 'r/aww', 'r/gaming', 'r/oddlysatisfying'];
       const TITLES = ['the colors tonight', 'golden hour hit different', 'found this spot by accident', 'not edited, I promise', 'rainy window, lo-fi on', 'rate my wallpaper', 'this view at 6am', 'calm.'];
+      const NSFW = SPICY ? new Set([1, 3, 4, 6, 7, 9, 10, 12]) : new Set();
+      const NSFW_NAMES = ['r/████████', 'r/[redacted]', 'r/you_know_which', 'r/████'];
+      const NSFW_TITLES = ['[you know what this is]', 'not safe for this ad', '[censored for the trailer]', 'no thoughts, just vibes'];
+      const BLOBS = [
+        'radial-gradient(ellipse 60% 70% at 38% 48%, rgba(255,177,153,.9), transparent), radial-gradient(ellipse 60% 70% at 66% 58%, rgba(255,79,109,.85), transparent), #3a1030',
+        'radial-gradient(ellipse 60% 70% at 50% 42%, rgba(249,168,212,.9), transparent), radial-gradient(ellipse 60% 70% at 30% 68%, rgba(192,38,211,.8), transparent), #2a0f2e',
+        'radial-gradient(ellipse 60% 70% at 60% 50%, rgba(253,164,175,.9), transparent), radial-gradient(ellipse 60% 70% at 35% 36%, rgba(251,113,133,.85), transparent), #3b0a1e',
+      ];
       const feed = $('#feed');
       const posts = KINDS.map((kind, n) => {
         const el = document.createElement('div');
-        el.className = 'post';
+        const nsfw = NSFW.has(n);
+        el.className = nsfw ? 'post nsfw' : 'post';
         const slides = kind === 'gallery' ? 3 : 1;
         const slideHtml = Array.from({ length: slides }, (_, i) => {
           const p = PAL[(n * 3 + i * 2) % PAL.length];
+          if (nsfw) return `<div class="slide" style="background:${BLOBS[(n + i) % BLOBS.length]}"></div>`;
           return `<div class="slide" style="background:${p[0]};--sun:${p[1]};--hill:${p[2]};--sx:${18 + ((n * 23 + i * 31) % 55)}%"></div>`;
         }).join('');
         const extra =
@@ -543,9 +660,12 @@
             : kind === 'video'
               ? `<div class="play">▶</div><div class="vbar"><div class="vfill"></div></div>`
               : '';
-        el.innerHTML = `<div class="ptop"><span class="av" style="background:${PAL[n % PAL.length][0]}"></span><span class="pname">${NAMES[n % NAMES.length]}</span><span class="pmeta">· ${(n * 7) % 23 + 1}h</span></div>
-          <div class="ptitle">${TITLES[n % TITLES.length]}</div>
-          <div class="media" style="height:${kind === 'video' ? 380 : 420 + ((n * 47) % 120)}px"><div class="slides">${slideHtml}</div>${extra}</div>
+        const name = nsfw ? NSFW_NAMES[n % NSFW_NAMES.length] : NAMES[n % NAMES.length];
+        const title = nsfw ? NSFW_TITLES[n % NSFW_TITLES.length] : TITLES[n % TITLES.length];
+        const tag = nsfw && kind !== 'video' ? '<div class="tag18">18+ · blurred for this video</div>' : '';
+        el.innerHTML = `<div class="ptop"><span class="av" style="background:${PAL[n % PAL.length][0]}"></span><span class="pname">${name}</span>${nsfw ? '<span class="badge">NSFW</span>' : ''}<span class="pmeta">· ${(n * 7) % 23 + 1}h</span></div>
+          <div class="ptitle">${title}</div>
+          <div class="media" style="height:${kind === 'video' ? 380 : 420 + ((n * 47) % 120)}px"><div class="slides">${slideHtml}</div>${tag}${extra}</div>
           <div class="acts"><span>▲ Upvote</span><span>Comments</span><span>Save</span></div>`;
         feed.append(el);
         return { el, kind };
@@ -555,21 +675,21 @@
       // ---------- dust + grain ----------
       const dust = $('#dust').getContext('2d');
       const grain = $('#grain').getContext('2d');
-      const img = grain.createImageData(480, 270);
+      const img = grain.createImageData(W / 4, H / 4);
       function rng(seed) {
         let s = seed >>> 0;
         return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
       }
       const motes = Array.from({ length: 60 }, (_, i) => {
         const r = rng(i * 7919 + 13);
-        return { x: r() * 1920, y: r() * 1080, s: 0.6 + r() * 2.2, v: 6 + r() * 16, ph: r() * 6.28, a: 0.05 + r() * 0.18 };
+        return { x: r() * W, y: r() * H, s: 0.6 + r() * 2.2, v: 6 + r() * 16, ph: r() * 6.28, a: 0.05 + r() * 0.18 };
       });
 
       function drawDust(t) {
-        dust.clearRect(0, 0, 1920, 1080);
+        dust.clearRect(0, 0, W, H);
         for (const m of motes) {
-          const x = (m.x + Math.sin(t * 0.3 + m.ph) * 30) % 1920;
-          const y = (((m.y - t * m.v) % 1080) + 1080) % 1080;
+          const x = (m.x + Math.sin(t * 0.3 + m.ph) * 30) % W;
+          const y = (((m.y - t * m.v) % H) + H) % H;
           dust.fillStyle = `rgba(255,${180 + m.s * 20},${200},${m.a * (0.6 + 0.4 * Math.sin(t + m.ph))})`;
           dust.beginPath();
           dust.arc(x, y, m.s, 0, 6.283);
@@ -610,8 +730,8 @@
         const rise = easeInOut(prog(t, 6.4, 1.4));
         const toGame = easeInOut(prog(t, 26.4, 1.2));
         const away = easeInOut(prog(t, 32.8, 1.2));
-        const x = lerp(lerp(300, 1030, toGame), 610, away);
-        const y = lerp(1100, 100, rise) + lerp(0, 60, toGame) * (1 - away);
+        const x = V ? 190 : lerp(lerp(300, 1030, toGame), 610, away);
+        const y = V ? lerp(2000, 560, rise) + lerp(0, 267, toGame) * (1 - away) : lerp(1100, 100, rise) + lerp(0, 60, toGame) * (1 - away);
         const sc = lerp(1, 0.72, toGame);
         mon.style.left = `${x}px`;
         mon.style.top = `${y}px`;
@@ -659,8 +779,9 @@
         // keycaps for the hotkey scene
         const keys = $('#keys');
         const kOn = prog(t, 13.8, 0.6) * (1 - prog(t, 19.4, 0.5));
-        keys.style.left = '1080px';
-        keys.style.top = '600px';
+        keys.style.left = V ? '50%' : '1080px';
+        keys.style.top = V ? '1490px' : '600px';
+        keys.style.transform = V ? 'translateX(-50%)' : 'none';
         keys.style.opacity = kOn;
         let press = 0;
         for (const kt of T.keys) {
@@ -690,16 +811,16 @@
         const l1 = easeInOut(prog(t, T.logo, 1.0)) * (1 - easeInOut(prog(t, 12.6, 0.7)));
         const l2 = easeInOut(prog(t, T.end, 1.2));
         if (t < 20) {
-          logo.style.left = '1080px';
-          logo.style.top = '400px';
+          logo.style.left = V ? '50%' : '1080px';
+          logo.style.top = V ? '220px' : '400px';
           logo.style.opacity = l1;
-          logo.style.transform = `scale(${lerp(0.94, 1, l1)})`;
-          logo.style.transformOrigin = 'left center';
+          logo.style.transform = `${V ? 'translateX(-50%) ' : ''}scale(${lerp(0.94, 1, l1)})`;
+          logo.style.transformOrigin = V ? 'center' : 'left center';
           logo.querySelector('.name').style.fontSize = '84px';
           logo.querySelector('svg').style.width = logo.querySelector('svg').style.height = '96px';
         } else {
           logo.style.left = '50%';
-          logo.style.top = '400px';
+          logo.style.top = V ? '660px' : '400px';
           logo.style.opacity = l2;
           logo.style.transformOrigin = 'center';
           logo.style.transform = `translateX(-50%) scale(${lerp(0.9, 1, l2)})`;
