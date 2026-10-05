@@ -1,7 +1,7 @@
 const { DEFAULTS, DELAY_STEPS, PAGE_KEY_ACTIONS, nearestStep, formatDelay, formatKey } = globalThis.GoonShared;
 const $ = (id) => document.getElementById(id);
 
-const COMMAND_ORDER = ['next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'open-media', 'toggle-video', 'toggle-fullscreen', 'upvote', 'save', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
+const COMMAND_ORDER = ['toggle-hotkeys', 'next-post', 'previous-post', 'next-image', 'previous-image', 'toggle-auto', 'open-media', 'toggle-video', 'toggle-fullscreen', 'upvote', 'save', 'faster', 'slower', 'toggle-media-only', '_execute_action'];
 
 let tabId = null;
 let pageKeys = {};
@@ -151,6 +151,11 @@ async function init() {
     };
     savePageKeys();
   });
+  const pause = $('pauseKeys');
+  const showPause = async () => (pause.checked = !!(await chrome.storage.local.get('hotkeysPaused').catch(() => ({}))).hotkeysPaused);
+  showPause();
+  pause.addEventListener('change', () => chrome.storage.local.set({ hotkeysPaused: pause.checked }));
+  chrome.storage.local.onChanged?.addListener(showPause);
   $('editKeys').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
 
   renderShortcuts().catch(() => {});

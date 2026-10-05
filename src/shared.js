@@ -26,6 +26,7 @@ globalThis.GoonShared = {
     ['toggle-video', 'Play / pause video'],
     ['upvote', 'Upvote / like'],
     ['save', 'Save / bookmark'],
+    ['toggle-hotkeys', 'Pause / resume hotkeys'],
   ],
 
   formatKey(spec) {

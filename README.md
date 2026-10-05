@@ -83,6 +83,7 @@ doesn't let extensions do that themselves.
 | Full-screen mode on / off      | not set         |       |
 | Upvote (Reddit) / like (X)     | not set         |       |
 | Save (Reddit) / bookmark (X)   | not set         |       |
+| Pause / resume all hotkeys     | not set         |       |
 
 The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't the focused window.
 The ones marked "not set" can be given a key on the shortcuts page (below) or as a page key in the panel.
@@ -94,6 +95,19 @@ The ones marked "not set" can be given a key on the shortcuts page (below) or as
    already be Global, but check anyway: Chrome skips a default key if another extension already uses it.
 3. To use other keys, click the pencil and press a new combination. It has to include Ctrl or
    Alt. Pick something your game doesn't use.
+
+### Pause all hotkeys (get Ctrl+W back)
+
+Give **Pause / resume all hotkeys** a key on the shortcuts page (set it to Global too), or tick
+**Pause all hotkeys** in the panel. While paused:
+
+- GoonScroller ignores all its hotkeys and page keys, so the arrow keys scroll normally again.
+- The toolbar icon shows a grey **OFF**.
+- A hotkey sitting on a browser shortcut does that shortcut's normal job while the browser window is
+  focused: **Ctrl+W** closes the tab, **Ctrl+Shift+W** the window, **Ctrl+T** opens a tab,
+  **Ctrl+N** a window, **Ctrl+R** reloads (⌘ on Mac).
+
+Press the pause key again to switch GoonScroller back on. A pause ends when the browser restarts.
 
 ### Page keys: plain keys like the arrow keys
 
@@ -178,6 +192,10 @@ fix them, but most have a workaround.
 
 **Hotkeys**
 
+- **Pausing doesn't hand keys back to other apps.** The browser keeps a global hotkey for itself
+  as long as it's assigned. While paused, GoonScroller redoes the common browser shortcuts (see
+  "Pause all hotkeys"), but in other apps and games the key still doesn't arrive. To free a key
+  there, remove it on the shortcuts page.
 - **Global hotkeys that overlap with your game's controls freeze your movement.** For example, with
   `Ctrl+W/A/S/D` as global hotkeys, pressing Ctrl to crouch while walking hands those keys to the
   scroller instead of the game. Windows takes a global hotkey before the game sees it, so the game

@@ -781,7 +781,7 @@
     const command =
       Object.entries(settings.pageKeys || {}).find(([, spec]) => matchesPageKey(spec, e))?.[0] ??
       pageShortcuts.find((c) => matchesShortcut(c.spec, e))?.name;
-    if (!command) return;
+    if (!command || (hotkeysPaused && command !== 'toggle-hotkeys')) return; // paused: the key does its normal job
     e.preventDefault();
     e.stopPropagation();
     ready.then(() => run(command));
@@ -1024,6 +1024,11 @@
         if (auto) startCountdown();
         break;
       }
+      case 'toggle-hotkeys':
+        try {
+          chrome.storage.local.set({ hotkeysPaused: !hotkeysPaused });
+        } catch {}
+        break;
       case 'toggle-fullscreen':
         saveSetting({ fullscreen: !settings.fullscreen });
         hud.toast(`Full-screen mode: ${settings.fullscreen ? 'on' : 'off'}`);
@@ -1110,7 +1115,16 @@
     () => {},
   );
 
+  // "Pause hotkeys": page keys and the hotkey fallback step aside until it's switched back on.
+  let hotkeysPaused = false;
+  chrome.storage.local.get('hotkeysPaused').then((s) => (hotkeysPaused = !!s.hotkeysPaused), () => {});
+
   chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.hotkeysPaused) {
+      hotkeysPaused = !!changes.hotkeysPaused.newValue;
+      if (!document.hidden) hud.toast(hotkeysPaused ? 'Hotkeys paused · keys work normally again' : 'Hotkeys back on', 2200);
+      return;
+    }
     if (area !== 'sync') return;
     for (const [key, { newValue }] of Object.entries(changes)) {
       if (key in DEFAULTS) settings[key] = newValue ?? DEFAULTS[key];

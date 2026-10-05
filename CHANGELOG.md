@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+**New: pause all hotkeys.** One key (or the switch in the panel) turns all GoonScroller hotkeys
+and page keys off, so keys like Ctrl+W do their normal job again. Press it again to switch back.
+
+- Set it under "Pause / resume all hotkeys" on the shortcuts page, and set it to Global.
+- While paused the toolbar icon shows a grey OFF.
+- Hotkeys on browser shortcuts (Ctrl+W, Ctrl+Shift+W, Ctrl+T, Ctrl+N, Ctrl+R) do their normal job
+  while the browser is focused.
+- A pause ends when the browser restarts.
+
 ## 1.0.0
 
 First release. 🤖 Made with AI: the whole extension was written by Claude (Anthropic) in Claude Code.

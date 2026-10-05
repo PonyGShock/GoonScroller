@@ -315,6 +315,35 @@ await test('reddit: pressing Ctrl+Shift+2 / Ctrl+Shift+1 in the page works', asy
   assert.equal(await postAt('shreddit-post', 61), 'p0');
 });
 
+await test('pause hotkeys: hotkeys and page keys step aside, the pause key brings them back', async () => {
+  await setSettings({ smooth: false, pageKeys: { 'next-post': { code: 'ArrowDown' }, 'toggle-hotkeys': { code: 'KeyP' } } });
+  await open('https://www.reddit.com/r/test/');
+  const hotkey = (c) => sw.evaluate((c) => globalThis.onHotkey(c), c);
+  assert.equal(await hotkey('toggle-hotkeys'), 'hotkeys paused');
+  assert.equal(await hotkey('next-post'), 'paused, ignored');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Control+Shift+Digit2');
+  await wait(600);
+  assert.notEqual(await postAt('shreddit-post', 61), 'p0'); // the arrow key just scrolled the page natively
+  assert.equal(await sw.evaluate(() => chrome.action.getBadgeText({})), 'OFF');
+  await page.keyboard.press('KeyP'); // the pause key itself keeps working
+  await wait(300);
+  assert.equal((await sw.evaluate(() => chrome.storage.local.get('hotkeysPaused'))).hotkeysPaused, false);
+  await page.keyboard.press('ArrowDown');
+  await wait(600);
+  assert.equal(await postAt('shreddit-post', 61), 'p0');
+  assert.equal(await hotkey('next-post'), 'sent');
+  // While paused, a hotkey sitting on a browser shortcut does that shortcut's normal job.
+  const action = (s) => sw.evaluate((s) => globalThis.browserShortcutAction(s), s);
+  assert.equal(await action('Ctrl+W'), 'close-tab');
+  assert.equal(await action('⌘W'), 'close-tab');
+  assert.equal(await action('Ctrl+Shift+W'), 'close-window');
+  assert.equal(await action('Ctrl+T'), 'new-tab');
+  assert.equal(await action('Ctrl+A'), null);
+  assert.equal(await action('Alt+W'), null);
+  await setSettings({ pageKeys: {} });
+});
+
 await test('reddit: plain arrow keys as page keys, incl. previous image back to the previous post', async () => {
   await setSettings({
     smooth: false,

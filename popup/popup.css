@@ -197,6 +197,20 @@ input[type='range'] {
   cursor: pointer;
 }
 
+.pause {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.pause .hint {
+  margin: 0;
+}
+
+.pause input,
 .options input {
   accent-color: var(--accent);
 }
