@@ -73,12 +73,22 @@ the Chrome Web Store.
 
 ## 6. Updating later
 
-1. Raise `"version"` in `manifest.json` (e.g. `1.0.1`). Each upload needs a higher version.
-   Add a `## 1.0.1` section to `CHANGELOG.md` saying what changed.
-2. `npm test`, then push. The GitHub release is created on its own. Run `npm run package` for
-   the store zip.
-3. Upload the new zip under the item's **Package** tab and submit. Installed copies update
-   automatically after approval.
+Every update follows the same loop:
+
+1. **Change and test.** Describe the change to Claude Code in a session on this repo. It edits the
+   code, runs `npm test`, and pushes to the branch.
+2. **Try it yourself.** Download the code (or the zip from the new release), then in
+   `chrome://extensions` either click ↻ on the unpacked GoonScroller or load the new folder.
+   Turn the store version off meanwhile so the two don't both grab the hotkeys.
+3. **Release.** Raise `"version"` in `manifest.json` (and `package.json`), e.g. 1.1.0 → 1.1.1 for
+   a fix, 1.2.0 for a new feature, and add a section for it at the top of `CHANGELOG.md`. Push.
+   The Release workflow then builds the zip and publishes the GitHub release by itself.
+4. **Chrome Web Store.** Dashboard → GoonScroller → **Package** → **Upload new package**, pick
+   `goonscroller-<version>.zip` (from the GitHub release or `npm run package`), then
+   **Submit for review**. After approval, installed copies update themselves within a few hours.
+
+A new permission in `manifest.json` makes Chrome ask existing users to approve it, and some
+stop there, so avoid new permissions unless they're really needed.
 
 ## Store listing text
 
