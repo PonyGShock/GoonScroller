@@ -1,6 +1,6 @@
 """Calm lo-fi soundtrack for the promo, synthesized from scratch (no samples, no licensing).
 
-Pads, Rhodes-like chords, a soft beat, vinyl crackle and rain, plus gentle sound effects
+Pads, Rhodes-like chords, a soft beat and a quiet rain bed, plus gentle sound effects
 synced to timeline.json (post snaps, key presses, gallery flips, logo).
     python3 promo/music.py out.wav
 """
@@ -128,7 +128,8 @@ def rim():
 
 def hat(vel):
     t = t_axis(0.08)
-    return hp(rng.standard_normal(len(t)), 7000) * np.exp(-t / 0.018) * vel
+    env = np.minimum(1, t / 0.004) * np.exp(-t / 0.03)
+    return bp(rng.standard_normal(len(t)), 4000, 8000, order=4) * env * vel
 
 
 SWING = 0.58
@@ -141,7 +142,7 @@ for b in range(*SEC["drums"]):
         add(drums, rim() * 0.09, base + beat_pos * BEAT + 0.01)
     for e in range(8):
         pos = (e // 2) + (SWING if e % 2 else 0)
-        add(drums, hat(rng.uniform(0.5, 1.0)) * 0.035, base + pos * BEAT)
+        add(drums, hat(rng.uniform(0.5, 1.0)) * 0.02, base + pos * BEAT)
 
 # ---------- sound effects ----------
 def whoomp():
@@ -174,20 +175,15 @@ for s in T["snaps"]:
     add(sfx, whoomp() * 0.26, s - 0.02)
 for k in T["keys"]:
     for i in range(3):
-        add(sfx, click() * 0.06, k - 0.2 + i * 0.03)
+        add(sfx, lp(click(), 2500) * 0.035, k - 0.2 + i * 0.03)
 for f in T["flips"]:
     add(sfx, pluck(note_hz("E5")) * 0.05, f)
 add(sfx, chime([note_hz("C5"), note_hz("G5"), note_hz("E6")]) * 0.06, T["logo"])
 add(sfx, chime([note_hz("F4"), note_hz("C5"), note_hz("A5"), note_hz("E6")], 5) * 0.07, T["end"])
 
-# ---------- ambience: vinyl and rain ----------
-hiss = lp(rng.standard_normal(N), 5000) * 0.004
-crackle = np.zeros(N)
-pops = rng.random(N) < 7 / SR
-crackle[pops] = rng.uniform(-1, 1, pops.sum())
-crackle = hp(crackle, 1500) * 0.2
-rain = bp(rng.standard_normal(N), 500, 3500) * 0.014 * (0.8 + 0.2 * np.sin(2 * np.pi * 0.07 * np.arange(N) / SR))
-ambience = hiss + crackle + rain
+# ---------- ambience: a soft, dark rain bed (no vinyl crackle or hiss) ----------
+rain = lp(bp(rng.standard_normal(N), 250, 1800, order=4), 1200) * 0.008 * (0.85 + 0.15 * np.sin(2 * np.pi * 0.07 * np.arange(N) / SR))
+ambience = rain
 
 # ---------- mix ----------
 duck = 1 - 0.3 * np.clip(kick_env, 0, 1)
