@@ -3,6 +3,7 @@
   "name": "GoonScroller",
   "version": "1.1.0",
   "description": "Hands-free, post-by-post scrolling for Reddit and X, with global hotkeys that work while you game.",
+  "homepage_url": "https://ponygshock.github.io/GoonScroller/",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

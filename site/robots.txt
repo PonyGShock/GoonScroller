@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ponygshock.github.io/GoonScroller/sitemap.xml
