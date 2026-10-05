@@ -46,7 +46,8 @@ const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-fr
 const frames = Math.round(T.duration * T.fps);
 for (let f = 0; f < frames; f++) {
   await page.evaluate(([t, i]) => render(t, i), [f / T.fps, f]);
-  const buf = await page.screenshot({ type: 'png' });
+  // Max-quality JPEG: far faster than PNG at 2x, and the downscale hides any artifacts.
+  const buf = await page.screenshot({ type: 'jpeg', quality: 100 });
   if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
   if (f % 150 === 0) console.log(`frame ${f}/${frames}`);
 }
