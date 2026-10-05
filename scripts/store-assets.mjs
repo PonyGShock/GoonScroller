@@ -164,7 +164,7 @@ const SHOTS = {
         <div class="eyebrow">Global hotkeys</div>
         <h1>Keeps working<br /><span class="accent">while you game.</span></h1>
         <p>Put your feed on the second monitor. The hotkeys reach it even when your game has focus. No alt-tab.</p>
-        <ul class="ticks"><li>Bind them to spare mouse buttons</li><li>Or use plain arrow keys on the page</li></ul>
+        <ul class="ticks"><li>Change them to whatever you like</li><li>Or use plain arrow keys on the page</li></ul>
       </div>
       <div class="visual" style="flex-direction:column;align-items:stretch;gap:14px">
         ${keyRow(['Ctrl', 'Shift', '2'], 'Next post', true)}
