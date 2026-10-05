@@ -1,5 +1,7 @@
 # GoonScroller
 
+**🌐 [Website](https://ponygshock.github.io/GoonScroller/)** · **🧩 [Chrome Web Store](https://chromewebstore.google.com/detail/oblelonljmpblebbampfpilblmeobdgb)** · **⬇ [Latest release](https://github.com/PonyGShock/GoonScroller/releases/latest)**
+
 > **🤖 Made with AI.** This whole project (the extension, its tests and these docs) was written by
 > Claude, Anthropic's AI model, in Claude Code. PonyGShock came up with the idea, directed it, and
 > tested every version on the real sites together with friends.
