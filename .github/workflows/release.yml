@@ -1,0 +1,34 @@
+# Publishes a GitHub release with the extension zip whenever manifest.json has a version that
+# doesn't have a release yet. To release: raise "version" in manifest.json, add a section for it
+# to CHANGELOG.md, and push.
+name: Release
+
+on:
+  push:
+    branches: [main, claude/reddit-x-auto-scroller-3enxqo]
+    paths: [manifest.json, CHANGELOG.md, .github/workflows/release.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release if this version is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "$tag is already released, nothing to do."
+            exit 0
+          fi
+          node scripts/package.mjs
+          # The notes are the CHANGELOG.md section for this version.
+          awk -v v="$version" '/^## /{p = ($2 == v)} p && !/^## /' CHANGELOG.md > notes.md
+          gh release create "$tag" "dist/goonscroller-$version.zip" \
+            --title "GoonScroller $version" --notes-file notes.md --target "$GITHUB_SHA"

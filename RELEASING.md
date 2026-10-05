@@ -25,8 +25,10 @@ stores want. No tests or tooling.
 
 ## 3. A GitHub release (for people who install by hand)
 
-**Releases → Draft a new release** → tag `v1.0.0` → title "GoonScroller 1.0.0" → attach the zip from
-`dist/` → **Publish release**. People can download the zip, unzip it and use **Load unpacked**.
+This happens automatically. The **Release** workflow (`.github/workflows/release.yml`) builds the
+zip and publishes a release named after the version in `manifest.json`, with the matching section of
+`CHANGELOG.md` as release notes. It only runs when that version has no release yet. People can
+download the zip, unzip it and use **Load unpacked**.
 
 ## 4. Chrome Web Store
 
@@ -68,7 +70,9 @@ the Chrome Web Store.
 ## 6. Updating later
 
 1. Raise `"version"` in `manifest.json` (e.g. `1.0.1`). Each upload needs a higher version.
-2. `npm test`, then `npm run package`.
+   Add a `## 1.0.1` section to `CHANGELOG.md` saying what changed.
+2. `npm test`, then push. The GitHub release is created on its own. Run `npm run package` for
+   the store zip.
 3. Upload the new zip under the item's **Package** tab and submit. Installed copies update
    automatically after approval.
 
