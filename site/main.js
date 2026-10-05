@@ -1,6 +1,6 @@
 // Chrome Web Store page. Paste the listing URL here once it's live; until then the "Add to Chrome"
 // buttons fall back to the GitHub release download.
-const STORE_URL = '';
+const STORE_URL = 'https://chromewebstore.google.com/detail/oblelonljmpblebbampfpilblmeobdgb';
 const RELEASE_URL = 'https://github.com/PonyGShock/GoonScroller/releases/latest';
 
 const $ = (sel, root = document) => root.querySelector(sel);

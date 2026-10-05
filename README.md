@@ -47,6 +47,12 @@ inside redgifs embeds so it can see and start those videos.
 
 ## Install (Chrome, Edge, Brave, Opera, Vivaldi)
 
+**Easiest:** get it from the
+[Chrome Web Store](https://chromewebstore.google.com/detail/oblelonljmpblebbampfpilblmeobdgb) and
+click **Add to Chrome**. It updates itself. Website: https://ponygshock.github.io/GoonScroller/
+
+**Or install it by hand:**
+
 1. Download this repo (**Code → Download ZIP**, then unzip) or `git clone` it.
 2. Open `chrome://extensions` (in Edge: `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the unzipped **GoonScroller** folder: the one that has
