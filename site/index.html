@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoonScroller · hands-free doomscrolling</title>
+    <meta name="description" content="A free, open-source browser extension that scrolls Reddit and X one post at a time, on hotkeys that work even while you're in a game." />
+    <meta property="og:title" content="GoonScroller · hands-free doomscrolling" />
+    <meta property="og:description" content="Reddit and X, one post at a time, on global hotkeys. Free, open source, runs 100% locally." />
+    <meta property="og:image" content="icon-128.png" />
+    <meta name="theme-color" content="#121318" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <a class="brand" href="#top"><img src="icon.svg" alt="" width="28" height="28" /> GoonScroller</a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a class="btn btn-small" data-store data-zip-label="Download" href="#install">Add to Chrome</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="hero-text">
+        <p class="eyebrow">Free browser extension for Reddit &amp; X</p>
+        <h1>Doomscrolling,<br /><span class="accent">now hands&#8209;free.</span></h1>
+        <p class="lead">
+          GoonScroller moves your feed <strong>exactly one post at a time</strong>, perfectly lined up.
+          Tap a hotkey or let it run on its own. The hotkeys even work while you're in a game.
+        </p>
+        <div class="cta">
+          <a class="btn" data-store data-zip-label="Download for free" href="#install">Add to Chrome · it's free</a>
+          <a class="btn btn-ghost" href="https://github.com/PonyGShock/GoonScroller" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+        <ul class="badges">
+          <li>Open source</li>
+          <li>Runs 100% locally</li>
+          <li>🤖 Made with AI</li>
+        </ul>
+      </div>
+
+      <div class="demo-wrap">
+        <div class="demo" id="demo" tabindex="0" aria-label="Interactive demo. Use the arrow keys while hovering it.">
+          <div class="win-bar"><i></i><i></i><i></i><span class="win-url" id="demoUrl">reddit.com</span></div>
+          <div class="screen">
+            <div class="screen-head" id="demoHead"><span class="site-dot"></span><span id="demoSite">Reddit</span><span class="head-tab">Home</span></div>
+            <div class="feed" id="feed"></div>
+            <div class="keycap-pop" id="keyPop"></div>
+            <div class="hud">
+              <div class="toast" id="toast"></div>
+              <div class="pill" id="pill"><div id="pillLabel">Auto · every 3s</div><div class="bar"><div class="fill" id="pillFill"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-controls" aria-label="Demo controls">
+          <button data-act="prev" title="Previous post (↑)">↑</button>
+          <button data-act="next" title="Next post (↓)">↓</button>
+          <button data-act="prevImg" title="Previous image (←)">←</button>
+          <button data-act="nextImg" title="Next image (→)">→</button>
+          <button data-act="auto" id="autoBtn" class="on" title="Auto-scroll on/off (Space)">❚❚ Auto</button>
+        </div>
+        <p class="demo-hint">Try it: hover the demo and press <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>Space</kbd>.</p>
+      </div>
+    </header>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>next post ↓</span><span>next post ↓</span><span>next post ↓</span><span>one more ↓</span><span>okay, last one ↓</span><span>next post ↓</span><span>next post ↓</span><span>one more ↓</span>
+        <span>next post ↓</span><span>next post ↓</span><span>next post ↓</span><span>one more ↓</span><span>okay, last one ↓</span><span>next post ↓</span><span>next post ↓</span><span>one more ↓</span>
+      </div>
+    </div>
+
+    <section class="section" id="how">
+      <p class="eyebrow center">The idea</p>
+      <h2 class="center">Your feed on the second monitor.<br />Your hands stay where they are.</h2>
+      <div class="compare reveal">
+        <div class="card before">
+          <h3>Normal scrolling</h3>
+          <ol class="scroll-sim">
+            <li>Grab the mouse, scroll</li>
+            <li>Overshoot by half a post</li>
+            <li>Scroll back up</li>
+            <li>Lose your spot in the game</li>
+            <li>Repeat 400 times</li>
+          </ol>
+        </div>
+        <div class="vs">vs</div>
+        <div class="card after">
+          <h3>With GoonScroller</h3>
+          <ol class="scroll-sim good">
+            <li>Press one key, or none at all</li>
+            <li>The next post snaps right under the header</li>
+            <li>Galleries flip, videos play to the end</li>
+            <li>Keep playing. Keep watching.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="steps reveal">
+        <div class="step"><span class="num">1</span><h3>Open Reddit or X</h3><p>New Reddit, old.reddit, x.com or twitter.com. Put it on your second screen.</p></div>
+        <div class="step"><span class="num">2</span><h3>Press a hotkey</h3><p><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>2</kbd> for the next post. It works from inside your game, no alt-tab.</p></div>
+        <div class="step"><span class="num">3</span><h3>Or just let it run</h3><p>Auto-scroll moves on every 1 second to 5 minutes and pauses when your mouse is on the page.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <p class="eyebrow center">What it does</p>
+      <h2 class="center">Small extension. Does the boring part for you.</h2>
+      <div class="grid reveal">
+        <div class="feat"><div class="ico ico-snap"><i></i><i></i></div><h3>Snaps exactly</h3><p>Every post lands right under the site's header. No half posts, no scrolling back.</p></div>
+        <div class="feat"><div class="ico ico-key"><span>⌨</span></div><h3>Global hotkeys</h3><p>Next, previous, auto, like, save. They work while a game or another app has focus.</p></div>
+        <div class="feat"><div class="ico ico-timer"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" /></svg></div><h3>Auto-scroll</h3><p>Every 1 second to 5 minutes. Hover the page to pause, move the mouse away to go on.</p></div>
+        <div class="feat"><div class="ico ico-gallery"><i></i><i></i><i></i></div><h3>Flips galleries</h3><p>Goes through every image of a gallery first, then on to the next post.</p></div>
+        <div class="feat"><div class="ico ico-video"><span>▶</span><b></b></div><h3>Waits for videos</h3><p>Lets a video play through before moving on, redgifs embeds included.</p></div>
+        <div class="feat"><div class="ico ico-full"><span>⛶</span></div><h3>Full-screen mode</h3><p>Auto-scroll can open every picture in the site's own viewer, one after another.</p></div>
+        <div class="feat"><div class="ico ico-heart"><span>♥</span></div><h3>Like &amp; save</h3><p>Upvote or like, save or bookmark the post you're on, with one key.</p></div>
+        <div class="feat"><div class="ico ico-skip"><span>⤼</span></div><h3>Skips the filler</h3><p>Text posts, ads and "Who to follow" boxes are skipped. Pictures and videos only.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="keys">
+      <p class="eyebrow center">Hotkeys</p>
+      <h2 class="center">Press them right now. We'll light up.</h2>
+      <div class="os-switch" role="tablist">
+        <button class="on" data-os="win">Windows / Linux</button>
+        <button data-os="mac">Mac</button>
+      </div>
+      <div class="keys reveal" id="keys-list">
+        <div class="keyrow" data-keys="ctrl shift 2" data-mac="meta shift 8"><span class="caps"></span><span>Next post</span></div>
+        <div class="keyrow" data-keys="ctrl shift 1" data-mac="meta shift 7"><span class="caps"></span><span>Previous post</span></div>
+        <div class="keyrow" data-keys="ctrl shift 3" data-mac="meta shift 9"><span class="caps"></span><span>Start / stop auto-scroll</span></div>
+        <div class="keyrow" data-keys="ctrl shift 4" data-mac="meta shift 0"><span class="caps"></span><span>Next image in a gallery</span></div>
+        <div class="keyrow" data-keys="arrowup arrowdown arrowleft arrowright" data-mac="arrowup arrowdown arrowleft arrowright"><span class="caps"></span><span>Optional page keys: posts and images</span></div>
+      </div>
+      <p class="small center">Every action can get its own key: play/pause, open picture, like, save, faster, slower…<br />Put them on spare mouse buttons and you never let go of the mouse.</p>
+    </section>
+
+    <section class="section" id="privacy">
+      <div class="privacy reveal">
+        <div class="lock" aria-hidden="true"><div class="shackle"></div><div class="body"></div></div>
+        <div>
+          <p class="eyebrow">Privacy</p>
+          <h2>It runs on your computer. That's it.</h2>
+          <ul class="checks">
+            <li>No tracking, no analytics, no accounts.</li>
+            <li>No servers of ours. Your settings stay in your browser.</li>
+            <li>The only extra request is to Reddit itself, when you press save.</li>
+            <li>Open source under the MIT license: anyone can read every line.</li>
+          </ul>
+          <a class="link" href="https://github.com/PonyGShock/GoonScroller/blob/HEAD/PRIVACY.md" target="_blank" rel="noopener">Read the privacy policy →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section ai reveal">
+      <div class="ai-card">
+        <div class="ai-icon">🤖</div>
+        <div>
+          <h2>Made with AI. Out in the open.</h2>
+          <p>
+            The whole extension, its tests and this website were written by Claude, Anthropic's AI,
+            in Claude Code. PonyGShock had the idea, steered it, and tested every version on the real
+            sites with friends. The code is all public, so you don't have to take anyone's word for it.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="install">
+      <p class="eyebrow center">Install</p>
+      <h2 class="center">Ready in under a minute.</h2>
+      <div class="install reveal">
+        <ol class="install-steps" data-store-only hidden>
+          <li><span class="num">1</span><div>Open GoonScroller in the <strong>Chrome Web Store</strong> and click <strong>Add to Chrome</strong>.</div></li>
+          <li><span class="num">2</span><div>A setup page opens. Set the hotkeys to <strong>Global</strong> so they work in games.</div></li>
+          <li><span class="num">3</span><div>Open Reddit or X and press <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>2</kbd>. That's it.</div></li>
+        </ol>
+        <ol class="install-steps" data-zip-only>
+          <li><span class="num">1</span><div><strong>Download the zip</strong> from the latest release and unzip it.</div></li>
+          <li><span class="num">2</span><div>Open <code>chrome://extensions</code> and turn on <strong>Developer mode</strong> (top right).</div></li>
+          <li><span class="num">3</span><div>Click <strong>Load unpacked</strong> and pick the unzipped folder.</div></li>
+          <li><span class="num">4</span><div>A setup page opens. Set the hotkeys to <strong>Global</strong> and you're done.</div></li>
+        </ol>
+        <div class="install-cta">
+          <a class="btn btn-big" data-store href="#install"><span data-store-only hidden>Add to Chrome</span><span data-zip-only>⬇ Download latest release</span></a>
+          <p class="small">Works in Chrome, Edge, Brave, Opera and Vivaldi.<br /><span data-zip-only>Chrome Web Store version coming soon. </span><a href="https://github.com/PonyGShock/GoonScroller/releases/latest" target="_blank" rel="noopener">Manual install (zip)</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <h2 class="center">Questions</h2>
+      <div class="faq reveal">
+        <details><summary>Is it free?</summary><p>Yes. Free and open source, no ads, no premium version.</p></details>
+        <details><summary>Does it work on Firefox or my phone?</summary><p>No. It needs global hotkeys, and only desktop Chromium browsers have those: Chrome, Edge, Brave, Opera, Vivaldi.</p></details>
+        <details><summary>Which sites?</summary><p>Reddit (new and old) and X/Twitter. Nothing else, on purpose.</p></details>
+        <details><summary>I saved a Reddit post but the Save button didn't change?</summary><p>Reddit only shows it after a refresh. The post is saved; check your saved posts.</p></details>
+        <details><summary>Will the hotkeys mess with my game?</summary><p>Pick combinations your game doesn't use, like the default <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>1</kbd>–<kbd>4</kbd>, or put them on mouse buttons.</p></details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <a class="brand" href="#top"><img src="icon.svg" alt="" width="22" height="22" /> GoonScroller</a>
+      <p>🤖 Made with AI (Claude) by PonyGShock · <a href="https://github.com/PonyGShock/GoonScroller" target="_blank" rel="noopener">GitHub</a> · <a href="https://github.com/PonyGShock/GoonScroller/blob/HEAD/LICENSE" target="_blank" rel="noopener">MIT license</a></p>
+      <p class="small">Not affiliated with Reddit or X. A free hobby project.</p>
+    </footer>
+
+    <script src="main.js"></script>
+  </body>
+</html>

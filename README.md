@@ -221,6 +221,10 @@ npx playwright install chromium
 npm test            # HEADED=1 npm test to watch it run
 ```
 
+The website lives in `site/` (plain HTML/CSS/JS, open `site/index.html` to preview) and is
+published to GitHub Pages by `.github/workflows/pages.yml`. Paste the Chrome Web Store link into
+`STORE_URL` at the top of `site/main.js` once the listing is live.
+
 The test loads the real extension in Chromium and runs it against mock Reddit (new and old) and X
 pages in `tests/fixtures/`. It checks post alignment, skipping, infinite scroll, old.reddit paging,
 auto-scroll with hover pause and video waiting, and the popup.
