@@ -20,7 +20,8 @@ const [W, H] = PROMO.layout === 'v' ? [1080, 1920] : [1920, 1080];
 const name = `goonscroller-promo-${PROMO.cut}-${PROMO.layout === 'v' ? '9x16' : '16x9'}`;
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: W, height: H } });
+// Rendered at 2x and scaled down for crisp text and edges.
+const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: stills ? 1 : 2 });
 await page.addInitScript(([t, p]) => ((window.TIMELINE = t), (window.PROMO = p)), [T, PROMO]);
 await page.goto(pathToFileURL(path.join(dir, 'scene.html')).href);
 await page.evaluate(() => document.fonts.ready);
@@ -38,13 +39,14 @@ execFileSync('python3', [path.join(dir, 'music.py'), path.join(out, 'music.wav')
 
 const video = path.join(out, `${name}.mp4`);
 const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(T.fps), '-i', '-',
-  '-i', path.join(out, 'music.wav'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '23', '-pix_fmt', 'yuv420p',
-  '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', video], { stdio: ['pipe', 'inherit', 'inherit'] });
+  '-i', path.join(out, 'music.wav'), '-vf', `scale=${W}:${H}:flags=lanczos`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '14',
+  '-profile:v', 'high', '-pix_fmt', 'yuv420p',
+  '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', video], { stdio: ['pipe', 'inherit', 'inherit'] });
 
 const frames = Math.round(T.duration * T.fps);
 for (let f = 0; f < frames; f++) {
   await page.evaluate(([t, i]) => render(t, i), [f / T.fps, f]);
-  const buf = await page.screenshot({ type: 'jpeg', quality: 92 });
+  const buf = await page.screenshot({ type: 'png' });
   if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
   if (f % 150 === 0) console.log(`frame ${f}/${frames}`);
 }
