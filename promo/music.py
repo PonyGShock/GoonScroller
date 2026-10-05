@@ -60,6 +60,7 @@ CHORDS = [
     (["C3", "E3", "G3", "B3"], "C2"),
 ]
 BARS = int(np.ceil(DUR / BAR))
+SEC = T.get("music", {"drums": [2, 10], "bass": [2, 10], "keys": [2, BARS]})
 
 pad = np.zeros(N)
 keys = np.zeros(N)
@@ -73,7 +74,7 @@ for b in range(BARS):
     notes, _ = CHORDS[b % 4]
     length = BAR + 1.6
     t = t_axis(length)
-    env = np.minimum(1, t / 0.9) * np.minimum(1, np.maximum(0, (length - t) / 1.4))
+    env = np.minimum(1, t / 0.4) * np.minimum(1, np.maximum(0, (length - t) / 1.4))
     sig = np.zeros_like(t)
     for n in notes:
         f = note_hz(n)
@@ -91,7 +92,7 @@ def rhodes(f, length=2.4, vel=1.0):
     return (body + bell) * trem * np.minimum(1, t / 0.005) * vel
 
 
-for b in range(2, BARS):
+for b in range(SEC["keys"][0], min(SEC["keys"][1], BARS)):
     notes, _ = CHORDS[b % 4]
     for beat_pos, vel in ((0, 1.0), (2.5, 0.7)):
         if b >= BARS - 1 and beat_pos > 0:
@@ -102,7 +103,7 @@ for b in range(2, BARS):
             add(keys, rhodes(note_hz(n) * 2, vel=vel) * 0.075, at + k * 0.012)
 
 # ---------- bass: round sine, beats 1 and 3 (bars 2-9) ----------
-for b in range(2, 10):
+for b in range(*SEC["bass"]):
     _, root = CHORDS[b % 4]
     for beat_pos in (0, 2):
         t = t_axis(BEAT * 1.6)
@@ -131,7 +132,7 @@ def hat(vel):
 
 
 SWING = 0.58
-for b in range(2, 10):
+for b in range(*SEC["drums"]):
     base = b * BAR
     for beat_pos in (0, 2.5):
         add(drums, kick() * 0.32, base + beat_pos * BEAT)
@@ -213,7 +214,7 @@ mix = np.tanh(mix * 1.6) / 1.6
 
 # Fades and normalize.
 tt = np.arange(N) / SR
-fade = np.minimum(1, tt / 2.0) * np.minimum(1, (DUR - tt) / 2.5)
+fade = np.minimum(1, tt / 0.3) * np.minimum(1, (DUR - tt) / 1.5)
 mix *= fade[:, None]
 mix *= 0.6 / np.max(np.abs(mix))
 

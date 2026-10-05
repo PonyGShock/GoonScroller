@@ -53,13 +53,8 @@
       }
       #grain {
         z-index: 51;
-        width: 480px;
-        height: 270px;
-        transform: scale(4);
-        transform-origin: 0 0;
-        opacity: 0.045;
-        image-rendering: pixelated;
-        mix-blend-mode: screen;
+        opacity: 0.035;
+        mix-blend-mode: overlay;
       }
       #dust {
         z-index: 2;
@@ -543,21 +538,21 @@
       <span class="name">GoonScroller</span>
     </div>
 
-    <!-- text cards; data-in/out are seconds, the words come from COPY below -->
-    <div id="intro1" class="text center big" data-in="0.8" data-out="5.9"></div>
-    <div id="intro2" class="text center small" data-in="2.6" data-out="5.9" style="font-size: 40px"></div>
-    <div id="tagB" class="text small" data-in="8.0" data-out="12.9" style="font-size: 40px; color: #c5c7cf"></div>
-    <div id="c1" class="text mid" data-in="13.6" data-out="19.6"></div>
-    <div id="c2" class="text small" data-in="14.4" data-out="19.6"></div>
-    <div id="d1" class="text mid" data-in="20.3" data-out="26.3"></div>
-    <div id="d2" class="text small" data-in="21.0" data-out="26.3"></div>
-    <div id="e1" class="text mid center" data-in="27.0" data-out="32.9"></div>
-    <div id="e2" class="text small center" data-in="27.6" data-out="32.9"></div>
-    <div id="f1" class="text center" data-in="34.6" data-out="40">
+    <!-- text cards: timing from timeline.json "text", words from COPY below -->
+    <div id="intro1" class="text center big" data-in></div>
+    <div id="intro2" class="text center small" data-in style="font-size: 40px"></div>
+    <div id="tagB" class="text small" data-in style="font-size: 40px; color: #c5c7cf"></div>
+    <div id="c1" class="text mid" data-in></div>
+    <div id="c2" class="text small" data-in></div>
+    <div id="d1" class="text mid" data-in></div>
+    <div id="d2" class="text small" data-in></div>
+    <div id="e1" class="text mid center" data-in></div>
+    <div id="e2" class="text small center" data-in></div>
+    <div id="f1" class="text center" data-in>
       <div class="small" id="f1t" style="font-size: 38px; color: #c5c7cf; margin-bottom: 34px"></div>
       <div class="pills" id="pills"></div>
     </div>
-    <div id="url" class="text center small" data-in="35.4" data-out="40" style="font-size: 30px">ponygshock.github.io/GoonScroller</div>
+    <div id="url" class="text center small" data-in style="font-size: 30px">ponygshock.github.io/GoonScroller</div>
 
     <canvas class="layer" id="grain" width="480" height="270"></canvas>
     <div class="layer" id="vignette"></div>
@@ -607,10 +602,9 @@
       }
       document.getElementById('dust').width = W;
       document.getElementById('dust').height = H;
-      document.getElementById('grain').width = W / 4;
-      document.getElementById('grain').height = H / 4;
-      document.getElementById('grain').style.width = `${W / 4}px`;
-      document.getElementById('grain').style.height = `${H / 4}px`;
+      // Still, pixel-fine dither: smooths the dark gradients without visible noise.
+      document.getElementById('grain').width = W;
+      document.getElementById('grain').height = H;
       const $ = (s) => document.querySelector(s);
       const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
       const lerp = (a, b, k) => a + (b - a) * k;
@@ -675,14 +669,14 @@
       // ---------- dust + grain ----------
       const dust = $('#dust').getContext('2d');
       const grain = $('#grain').getContext('2d');
-      const img = grain.createImageData(W / 4, H / 4);
+      const img = grain.createImageData(W, H);
       function rng(seed) {
         let s = seed >>> 0;
         return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
       }
-      const motes = Array.from({ length: 60 }, (_, i) => {
+      const motes = Array.from({ length: 24 }, (_, i) => {
         const r = rng(i * 7919 + 13);
-        return { x: r() * W, y: r() * H, s: 0.6 + r() * 2.2, v: 6 + r() * 16, ph: r() * 6.28, a: 0.05 + r() * 0.18 };
+        return { x: r() * W, y: r() * H, s: 0.6 + r() * 2.2, v: 6 + r() * 16, ph: r() * 6.28, a: 0.04 + r() * 0.1 };
       });
 
       function drawDust(t) {
@@ -706,30 +700,31 @@
         grain.putImageData(img, 0, 0);
       }
 
+      drawGrain(1);
+
       // ---------- frame ----------
       let OFF = null;
       window.render = (t, frame) => {
         OFF ||= offsets();
         drawDust(t);
-        drawGrain(Math.floor(frame / 4));
+        
         document.documentElement.style.setProperty('--gx', `${60 + Math.sin(t * 0.15) * 12}%`);
         document.documentElement.style.setProperty('--gy', `${40 + Math.cos(t * 0.12) * 10}%`);
 
         // text cards
         for (const el of document.querySelectorAll('[data-in]')) {
-          const a = +el.dataset.in;
-          const b = +el.dataset.out;
-          const k = Math.min(prog(t, a, 0.9), 1 - prog(t, b - 0.6, 0.6));
+          const [a, b] = T.text[el.id];
+          const k = Math.min(prog(t, a, 0.45), 1 - prog(t, b - 0.35, 0.35));
           el.style.opacity = easeInOut(clamp(k));
-          el.style.transform = `translateY(${(1 - easeInOut(prog(t, a, 0.9))) * 24}px)`;
-          el.style.filter = `blur(${(1 - easeInOut(prog(t, a, 0.9))) * 8}px)`;
+          el.style.transform = `translateY(${(1 - easeInOut(prog(t, a, 0.45))) * 18}px)`;
+          el.style.filter = `blur(${(1 - easeInOut(prog(t, a, 0.45))) * 6}px)`;
         }
 
         // monitor position: rises in at ~6.7s, slides right for the game scene, leaves at the end
         const mon = $('#monitor');
-        const rise = easeInOut(prog(t, 6.4, 1.4));
-        const toGame = easeInOut(prog(t, 26.4, 1.2));
-        const away = easeInOut(prog(t, 32.8, 1.2));
+        const rise = easeInOut(prog(t, ...T.scenes.rise));
+        const toGame = easeInOut(prog(t, T.scenes.game[0], 0.7));
+        const away = easeInOut(prog(t, T.scenes.away, 0.7));
         const x = V ? 190 : lerp(lerp(300, 1030, toGame), 610, away);
         const y = V ? lerp(2000, 560, rise) + lerp(0, 267, toGame) * (1 - away) : lerp(1100, 100, rise) + lerp(0, 60, toGame) * (1 - away);
         const sc = lerp(1, 0.72, toGame);
@@ -742,7 +737,7 @@
         let pos = 0;
         let idx = 0;
         T.snaps.forEach((s, i) => {
-          const k = snapEase(prog(t, s, 0.55));
+          const k = snapEase(prog(t, s, 0.45));
           if (t >= s) idx = i + 1;
           pos += k * (OFF[i + 1] - OFF[i]);
         });
@@ -765,10 +760,10 @@
 
         // HUD: visible during the auto-scroll scene
         const hud = $('#hud');
-        const hudOn = prog(t, 20.2, 0.4) * (1 - prog(t, 26.6, 0.4));
+        const hudOn = prog(t, T.scenes.hud[0], 0.3) * (1 - prog(t, T.scenes.hud[1], 0.3));
         hud.style.opacity = hudOn;
         let label = 'Auto · next image';
-        let start = 20.2;
+        let start = T.scenes.hud[0];
         let end = T.flips[0];
         if (t >= T.flips[0]) [start, end] = [T.flips[0], T.flips[1]];
         if (t >= T.flips[1]) [start, end, label] = [T.flips[1], T.snaps[6], 'Auto · every 3s'];
@@ -778,7 +773,7 @@
 
         // keycaps for the hotkey scene
         const keys = $('#keys');
-        const kOn = prog(t, 13.8, 0.6) * (1 - prog(t, 19.4, 0.5));
+        const kOn = prog(t, T.scenes.keys[0], 0.4) * (1 - prog(t, T.scenes.keys[1], 0.3));
         keys.style.left = V ? '50%' : '1080px';
         keys.style.top = V ? '1490px' : '600px';
         keys.style.transform = V ? 'translateX(-50%)' : 'none';
@@ -798,7 +793,7 @@
 
         // game panel
         const game = $('#game');
-        const gOn = easeInOut(prog(t, 26.6, 1.2)) * (1 - easeInOut(prog(t, 32.8, 1.0)));
+        const gOn = easeInOut(prog(t, T.scenes.game[0], 0.7)) * (1 - easeInOut(prog(t, T.scenes.game[1], 0.6)));
         game.style.opacity = gOn;
         game.style.transform = `translateX(${(1 - gOn) * -80}px)`;
         game.querySelector('.grid').style.backgroundPosition = `0 ${t * 120}px`;
@@ -808,9 +803,9 @@
 
         // logo: small reveal next to the monitor, then big on the end card
         const logo = $('#logo');
-        const l1 = easeInOut(prog(t, T.logo, 1.0)) * (1 - easeInOut(prog(t, 12.6, 0.7)));
-        const l2 = easeInOut(prog(t, T.end, 1.2));
-        if (t < 20) {
+        const l1 = easeInOut(prog(t, T.logo, 0.6)) * (1 - easeInOut(prog(t, T.scenes.logoOut, 0.4)));
+        const l2 = easeInOut(prog(t, T.end, 0.7));
+        if (t < T.scenes.keys[0]) {
           logo.style.left = V ? '50%' : '1080px';
           logo.style.top = V ? '220px' : '400px';
           logo.style.opacity = l1;
@@ -829,7 +824,7 @@
         }
 
         // fade in from black and out at the very end
-        $('#fade').style.opacity = Math.max(1 - prog(t, 0, 1.2), prog(t, T.duration - 1.3, 1.2));
+        $('#fade').style.opacity = Math.max(1 - prog(t, 0, 0.25), prog(t, T.duration - 0.8, 0.8));
       };
     </script>
   </body>
