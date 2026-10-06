@@ -88,6 +88,18 @@ doesn't let extensions do that themselves.
 The hotkeys go to the Reddit/X tab that's showing, even when the browser isn't the focused window.
 The ones marked "not set" can be given a key on the shortcuts page (below) or as a page key in the panel.
 
+> [!WARNING]
+> **A global hotkey is taken away from every other program.** Whatever key you give GoonScroller
+> stops doing its normal job everywhere else (games, Discord, your editor…) for as long as the
+> browser is running and GoonScroller is switched on. Closing Reddit/X doesn't free it, and
+> neither does "Pause all hotkeys". You get the key back by turning GoonScroller off in
+> `chrome://extensions` / `brave://extensions`, by closing the browser completely, or by moving the
+> hotkey to another key. So pick keys you never use for anything else.
+
+> [!NOTE]
+> **League of Legends blocks all global browser hotkeys** while it's running in the foreground.
+> GoonScroller can't get around that; use auto-scroll, or click the browser and use page keys.
+
 ### Make them work while you're in a game
 
 1. Open `chrome://extensions/shortcuts`, or click **Change hotkeys…** in the GoonScroller panel.
@@ -95,6 +107,8 @@ The ones marked "not set" can be given a key on the shortcuts page (below) or as
    already be Global, but check anyway: Chrome skips a default key if another extension already uses it.
 3. To use other keys, click the pencil and press a new combination. It has to include Ctrl or
    Alt. Pick something your game doesn't use.
+
+> ⚠️ Reminder: a global hotkey stops working in every other program while GoonScroller is on (see the warning under [Hotkeys](#hotkeys)).
 
 ### Pause all hotkeys (get Ctrl+W back)
 
@@ -108,6 +122,10 @@ Give **Pause / resume all hotkeys** a key on the shortcuts page (set it to Globa
   **Ctrl+N** a window, **Ctrl+R** reloads (⌘ on Mac).
 
 Press the pause key again to switch GoonScroller back on. A pause ends when the browser restarts.
+
+> ⚠️ **Pausing only helps inside the browser.** In other programs and games the paused keys
+> **stay blocked**, because the browser keeps a global hotkey for itself while GoonScroller is on.
+> To free them there, turn GoonScroller off in `chrome://extensions` / `brave://extensions`.
 
 ### Page keys: plain keys like the arrow keys
 
@@ -192,10 +210,14 @@ fix them, but most have a workaround.
 
 **Hotkeys**
 
-- **Pausing doesn't hand keys back to other apps.** The browser keeps a global hotkey for itself
-  as long as it's assigned. While paused, GoonScroller redoes the common browser shortcuts (see
-  "Pause all hotkeys"), but in other apps and games the key still doesn't arrive. To free a key
-  there, remove it on the shortcuts page.
+- **A global hotkey is blocked in every other program.** As long as the browser runs and
+  GoonScroller is on, its global keys don't reach other apps or games, even with no Reddit/X tab
+  open. Turn GoonScroller off, close the browser completely, or move the hotkey to free a key.
+- **Pausing doesn't hand keys back to other apps.** While paused, GoonScroller redoes the common
+  browser shortcuts (see "Pause all hotkeys"), but in other apps and games the key still doesn't
+  arrive. To free it there, turn GoonScroller off or remove the key on the shortcuts page.
+- **League of Legends blocks all global browser hotkeys** while it's in the foreground. Use
+  auto-scroll there, or click the browser and use page keys.
 - **Global hotkeys that overlap with your game's controls freeze your movement.** For example, with
   `Ctrl+W/A/S/D` as global hotkeys, pressing Ctrl to crouch while walking hands those keys to the
   scroller instead of the game. Windows takes a global hotkey before the game sees it, so the game
@@ -208,7 +230,7 @@ fix them, but most have a workaround.
   the shortcuts page.
 - **After reinstalling or updating, check the Global setting again.** The browser sometimes switches
   hotkeys back to "In Brave" / "In Chrome", so they stop working from other apps.
-- **Some games or anti-cheat programs block global hotkeys** while they're running. Use page keys or
+- **Some other games or anti-cheat programs block global hotkeys too** while they're running. Use page keys or
   mouse buttons there.
 - **On Linux under Wayland**, global hotkeys may not work, depending on your desktop.
 

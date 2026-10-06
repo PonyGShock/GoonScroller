@@ -1144,6 +1144,17 @@ code {
   margin: 16px auto 0;
 }
 
+.key-warn {
+  max-width: 880px;
+  margin: 16px auto 0;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 196, 0, 0.35);
+  border-radius: 14px;
+  background: rgba(255, 196, 0, 0.06);
+  color: #d6d8de;
+  font-size: 15px;
+}
+
 .kind {
   padding: 22px 24px;
   border-radius: var(--radius);
